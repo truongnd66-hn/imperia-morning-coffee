@@ -199,9 +199,9 @@
 
   <!-- JAVASCRIPT ĐIỀU HÀNH -->
   <script>
+    const GEMINI_API_KEY = "AQ.Ab8RN6Jb8DqRV-nCcdDAdtZbIvvmDyBliBDc-fz71y7DIb2SGA";
     const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
     const SUPABASE_KEY = "sb_publishable_APrYxrIAhLb83S5sIIWQ-A_MZpby4Ik";
-    const GEMINI_API_KEY = "AQ.Ab8RN6LrGGvZEv_ccxlTpiPRol0Bwz-xwgBh4P0m8IQLc75axQ";
     const ADMIN_PIN = "536125";
 
     const BANK_CONFIG = {
@@ -527,7 +527,7 @@ async function sendAiMessage() {
   const question = inputEl.value.trim();
   if (!question) return;
 
-  // Hiển thị câu hỏi của bạn
+  // Hiển thị tin nhắn người dùng
   msgContainer.innerHTML += `
     <div class="flex justify-end">
       <div class="bg-[#2B170E] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${question}</div>
@@ -535,6 +535,7 @@ async function sendAiMessage() {
   inputEl.value = "";
   msgContainer.scrollTop = msgContainer.scrollHeight;
 
+  // Trạng thái chờ
   const loadingId = "load_" + Date.now();
   msgContainer.innerHTML += `
     <div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">
@@ -545,7 +546,7 @@ async function sendAiMessage() {
   try {
     const contextData = { menu: dbMenu, inventory: dbInventory, orders: dbOrders };
     const promptText = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
-Dữ liệu thực tế từ Supabase:
+Dữ liệu thực tế:
 - Menu: ${JSON.stringify(dbMenu)}
 - Tồn kho: ${JSON.stringify(dbInventory)}
 - Đơn hàng: ${JSON.stringify(dbOrders)}
@@ -553,32 +554,36 @@ Dữ liệu thực tế từ Supabase:
 Chủ quán hỏi: "${question}"
 Yêu cầu: Trả lời ngắn gọn, thẳng thắn, chính xác số liệu bằng tiếng Việt.`;
 
-    // Gọi API qua Header x-goog-api-key chuẩn
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent", {
+    // Gọi đúng endpoint gemini-flash-latest theo cURL
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
+        "X-goog-api-key": GEMINI_API_KEY
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
+        contents: [
+          {
+            parts: [{ text: promptText }]
+          }
+        ]
       })
     });
 
     const resJson = await response.json();
 
     if (resJson.error) {
-      throw new Error(resJson.error.message || "Lỗi xác thực khóa");
+      throw new Error(resJson.error.message || "Lỗi xác thực máy chủ");
     }
 
-    const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "Không có nội dung trả lời.";
+    const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "Không có nội dung phản hồi.";
     document.getElementById(loadingId).remove();
     msgContainer.innerHTML += `
       <div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 leading-relaxed whitespace-pre-wrap">${replyText}</div>`;
   } catch (err) {
     document.getElementById(loadingId).remove();
     msgContainer.innerHTML += `
-      <div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">⚠️ Phản hồi lỗi: ${err.message}</div>`;
+      <div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">⚠️ Lỗi: ${err.message}</div>`;
   }
 
   btnSend.disabled = false;
