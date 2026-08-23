@@ -448,7 +448,7 @@ function loadAdminOrders() {
         <div class="p-3 rounded-xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1 text-xs">
           <div class="flex justify-between items-center">
             <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-md">${o.room}</span>
-            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '07:05 - 07:25'}</span>
+            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '06:45 - 07:05'}</span>
             <button onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
               ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
             </button>
