@@ -59,6 +59,15 @@
           <input type="tel" id="phoneInput" placeholder="09xxxxxxxx" class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm outline-none" oninput="checkFormValid()">
         </div>
       </div>
+      <!-- CHỌN KHUNG GIỜ GIAO -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-700 mb-1">Khung giờ treo cửa sáng mai *</label>
+        <select id="timeSlotInput" class="w-full px-3 py-2.5 border border-stone-300 rounded-xl text-sm font-bold text-stone-800 bg-stone-50 outline-none focus:ring-2 focus:ring-amber-900" onchange="checkFormValid()">
+          <option value="06:45 - 07:05">🌅 06:45 – 07:05 (Đi làm sớm)</option>
+          <option value="07:05 - 07:25" selected>⚡ 07:05 – 07:25 (Khung giờ phổ biến)</option>
+          <option value="07:25 - 07:45">☕ 07:25 – 07:45 (Thư thả / Đi làm muộn)</option>
+        </select>
+      </div>
       <div>
         <label class="block text-xs font-medium text-stone-600 mb-1">Ghi chú khẩu vị</label>
         <input type="text" id="noteInput" placeholder="Tách đá riêng, ít ngọt, nhiều sữa..." class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm outline-none">
@@ -307,13 +316,14 @@
 
     function closePaymentModal() { document.getElementById("qrModal").classList.add("hidden"); }
 
-    async function confirmOrderSuccess() {
+async function confirmOrderSuccess() {
       const btn = document.getElementById("btnConfirmPaid");
       btn.innerText = "Đang ghi nhận đơn...";
       btn.disabled = true;
       const room = document.getElementById("roomInput").value.trim();
       const name = document.getElementById("nameInput").value.trim();
       const phone = document.getElementById("phoneInput").value.trim();
+      const deliveryTime = document.getElementById("timeSlotInput").value;
       const note = document.getElementById("noteInput").value.trim();
 
       let total = 0, orderItems = [];
@@ -327,10 +337,17 @@
 
       try {
         const { error } = await supabaseClient.from('orders').insert([{
-          room: room, name: name, phone: phone, note: note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
+          room: room, 
+          name: name, 
+          phone: phone, 
+          delivery_time: deliveryTime,
+          note: note, 
+          items: orderItems, 
+          total_price: total, 
+          status: 'CHƯA GIAO'
         }]);
         if (error) throw error;
-        alert("🎉 Đặt cà phê thành công! Chúng mình sẽ treo trước cửa phòng bạn đúng hẹn sáng mai.");
+        alert(`🎉 Đặt thành công! Chúng mình sẽ treo trước cửa phòng ${room} trong khung giờ ${deliveryTime}.`);
         location.reload();
       } catch (err) {
         alert("Lỗi tạo đơn: " + err.message);
@@ -338,7 +355,6 @@
         btn.disabled = false;
       }
     }
-
     // ADMIN PIN MODAL
     function openPinModal() {
       document.getElementById("pinInput").value = "";
@@ -417,7 +433,7 @@
       if (tab === 'inventory') renderAdminInventory();
     }
 
-    function loadAdminOrders() {
+function loadAdminOrders() {
       const listEl = document.getElementById("adminOrdersList");
       if (dbOrders.length === 0) {
         listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Chưa có đơn hàng nào.</p>`;
@@ -432,18 +448,18 @@
         <div class="p-3 rounded-xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1 text-xs">
           <div class="flex justify-between items-center">
             <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-md">${o.room}</span>
-            <span class="font-bold text-stone-700">${o.name} - ${o.phone}</span>
+            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '07:05 - 07:25'}</span>
             <button onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
               ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
             </button>
           </div>
+          <div class="text-stone-700"><b>Khách:</b> ${o.name} - ${o.phone}</div>
           <p class="text-stone-800"><b>Món:</b> ${formatOrderItems(o.items)}</p>
           ${o.note ? `<p class="text-amber-900 bg-amber-50 p-1.5 rounded text-[11px]"><b>Ghi chú:</b> ${o.note}</p>` : ''}
           <p class="text-stone-400 text-[10px]">Tổng: <b>${o.total_price.toLocaleString('vi-VN')}đ</b> • Lúc: ${new Date(o.created_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</p>
         </div>
       `).join('');
     }
-
     function formatOrderItems(items) {
       if (!Array.isArray(items)) return '';
       return items.map(i => {
