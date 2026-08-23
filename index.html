@@ -142,15 +142,34 @@
       <div id="adminMenuList" class="space-y-2"></div>
     </div>
 
-    <!-- TAB 3: QUẢN LÝ KHO & NHẬP HÀNG -->
-    <div id="adminInventorySection" class="space-y-3 hidden">
-      <div class="flex justify-between items-center">
-        <p class="text-xs text-stone-500">Tồn kho nguyên liệu thực tế:</p>
-        <button onclick="promptNewStock()" class="text-xs bg-amber-950 text-white font-bold px-2.5 py-1 rounded-lg">+ Nhập thêm hàng</button>
+<!-- TAB 3: QUẢN LÝ KHO & NHẬP HÀNG -->
+    <div id="adminInventorySection" class="space-y-4 hidden">
+      <!-- BẢNG 1: TỒN KHO HIỆN TẠI -->
+      <div>
+        <div class="flex justify-between items-center bg-stone-900 text-white p-3 rounded-t-2xl shadow-sm border-b border-stone-700">
+          <div>
+            <p class="text-xs font-bold text-amber-400">📊 TỒN KHO & GIÁ VỐN</p>
+            <p class="text-[10px] text-stone-400">Giá tự nhảy theo trung bình cộng</p>
+          </div>
+          <div class="flex gap-1.5">
+            <!-- Nút thêm dòng nguyên liệu tùy biến -->
+            <button onclick="openNewIngredientModal()" class="text-[10px] bg-stone-700 hover:bg-stone-600 text-white font-bold px-2 py-1.5 rounded-lg shadow transition">+ Tạo mã mới</button>
+            <button onclick="openImportModal()" class="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1.5 rounded-lg shadow transition">+ Nhập thêm</button>
+          </div>
+        </div>
+        <div id="adminInvList" class="bg-white rounded-b-2xl shadow-sm border border-t-0 border-stone-200">
+           <!-- Danh sách kho sẽ render vào đây -->
+        </div>
       </div>
-      <div id="adminInvList" class="space-y-2"></div>
+
+      <!-- BẢNG 2: LỊCH SỬ NHẬP HÀNG (SỔ CÁI) -->
+      <div>
+        <h3 class="text-xs font-black text-stone-500 uppercase tracking-wider mb-2 ml-1">📋 Bảng Lịch Sử Nhập Hàng</h3>
+        <div id="adminImportLogs" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-2 space-y-1 max-h-60 overflow-y-auto">
+          <p class="text-xs text-stone-400 text-center py-4">Đang tải lịch sử nhập...</p>
+        </div>
+      </div>
     </div>
-  </div>
 
   <!-- ================= POPUP TRỢ LÝ AI ================= -->
   <div id="aiChatModal" class="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
@@ -182,17 +201,74 @@
   </div>
 
   <!-- POPUP MÃ PIN ADMIN -->
+    <!-- POPUP PHIẾU NHẬP HÀNG (TÍNH GIÁ BÌNH QUÂN) -->
+  <div id="importModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+      <h3 class="font-bold text-stone-800 text-sm border-b pb-2">📦 Lập Phiếu Nhập Hàng</h3>
+      
+      <div>
+        <label class="block text-[11px] font-bold text-stone-600 mb-1">Chọn nguyên liệu nhập kho:</label>
+        <select id="importIngredient" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm bg-stone-50 outline-none focus:border-amber-900"></select>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 mb-1">Lượng nhập thêm:</label>
+          <input type="number" id="importQty" placeholder="VD: 1000" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm text-center font-bold outline-none focus:border-amber-900">
+          <span class="block text-center text-[10px] text-stone-500 mt-1">(Theo đơn vị g, ml...)</span>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 mb-1">Tổng tiền hóa đơn:</label>
+          <input type="number" id="importTotalCost" placeholder="VD: 35000" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm text-center font-black text-amber-900 outline-none focus:border-amber-900">
+          <span class="block text-center text-[10px] text-stone-500 mt-1">VNĐ</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeImportModal()" class="flex-1 py-2.5 bg-stone-200 rounded-xl text-xs font-semibold text-stone-600">Hủy</button>
+        <button onclick="submitImport()" id="btnSubmitImport" class="flex-1 py-2.5 bg-amber-900 text-white rounded-xl text-xs font-bold">Lưu Phiếu Nhập</button>
+      </div>
+    </div>
+  </div>
   <div id="pinModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3 shadow-xl">
       <h3 class="font-bold text-stone-800 text-sm">Mã PIN Quản Trị</h3>
-      <input type="password" id="pinInput" placeholder="Mặc định: 8888" class="w-full text-center text-xl font-bold tracking-widest border border-stone-300 py-2.5 rounded-xl outline-none focus:border-amber-900">
+      <input type="password" id="pinInput" placeholder="Mặc định: truonG25@" class="w-full text-center text-xl font-bold tracking-widest border border-stone-300 py-2.5 rounded-xl outline-none focus:border-amber-900">
       <div class="flex gap-2">
         <button onclick="closePinModal()" class="flex-1 py-2 bg-stone-200 rounded-xl text-xs font-semibold text-stone-600">Hủy</button>
         <button onclick="submitPin()" class="flex-1 py-2 bg-amber-900 text-white rounded-xl text-xs font-bold">Xác nhận</button>
       </div>
     </div>
   </div>
+<!-- POPUP: TẠO MÃ NGUYÊN LIỆU MỚI (THÊM DÒNG TÙY BIẾN) -->
+  <div id="newIngredientModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+      <h3 class="font-black text-stone-800 text-sm border-b pb-2">➕ Thêm Mã Nguyên Liệu Mới</h3>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold text-stone-600 mb-1">Mã nguyên liệu (Dùng cho BOM) *</label>
+          <input type="text" id="newIngName" placeholder="VD: bot_cacao_g, ly_giay, ong_hut" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm outline-none focus:border-amber-900 bg-stone-50">
+          <p class="text-[9px] text-stone-400 mt-0.5">Viết liền không dấu, có gạch dưới. VD: matcha_g</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-stone-600 mb-1">Đơn vị *</label>
+            <input type="text" id="newIngUnit" placeholder="VD: g, ml, cái" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm outline-none focus:border-amber-900">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-stone-600 mb-1">Giá vốn ước tính (1 đơn vị)</label>
+            <input type="number" id="newIngCost" placeholder="VD: 150" class="w-full border border-stone-300 rounded-xl p-2.5 text-sm outline-none focus:border-amber-900">
+          </div>
+        </div>
+      </div>
 
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeNewIngredientModal()" class="flex-1 py-3 bg-stone-200 rounded-xl text-xs font-semibold text-stone-600">Hủy</button>
+        <button onclick="submitNewIngredient()" id="btnSubmitNewIng" class="flex-1 py-3 bg-amber-900 text-white rounded-xl text-xs font-bold">Thêm Mới</button>
+      </div>
+    </div>
+  </div>
   <!-- POPUP VIETQR CHO KHÁCH -->
   <div id="qrModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl p-5 max-w-sm w-full space-y-3 text-center shadow-2xl">
@@ -217,6 +293,88 @@
 
   <!-- ================= JAVASCRIPT ĐIỀU HÀNH HỆ THỐNG ================= -->
   <script>
+    // Render Bảng Lịch Sử Nhập Hàng
+    function renderAdminImportLogs() {
+      const logContainer = document.getElementById("adminImportLogs");
+      if (dbImportLogs.length === 0) {
+        logContainer.innerHTML = `<p class="text-[11px] text-stone-400 text-center py-4">Chưa có lịch sử nhập hàng nào.</p>`;
+        return;
+      }
+
+      logContainer.innerHTML = dbImportLogs.map(log => `
+        <div class="p-2 border-b border-stone-100 last:border-0 flex justify-between items-center text-xs">
+          <div>
+            <span class="font-bold text-emerald-700">+${log.added_qty}</span> 
+            <span class="font-bold text-stone-700">${log.ingredient_name}</span>
+            <p class="text-[9px] text-stone-400">${new Date(log.created_at).toLocaleString('vi-VN')}</p>
+          </div>
+          <div class="text-right font-black text-amber-950">
+            ${Number(log.total_price).toLocaleString('vi-VN')}đ
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render Bảng Tồn Kho (Chỉnh lại giao diện cho gọn)
+    function renderAdminInventory() {
+      const listEl = document.getElementById("adminInvList");
+      listEl.innerHTML = dbInventory.map(i => `
+        <div class="p-3 border-b border-stone-100 last:border-0 flex items-center justify-between text-xs">
+          <div>
+            <p class="font-bold text-stone-800">${i.name}</p>
+            <p class="text-stone-400 text-[10px]">Giá vốn: <span class="font-semibold text-stone-600">${i.cost_per_unit || 0}đ/${i.unit}</span></p>
+          </div>
+          <div class="text-right">
+            <p class="font-black text-sm ${Number(i.stock) < 200 ? 'text-red-600' : 'text-stone-800'}">${i.stock} <span class="text-[10px] font-normal">${i.unit}</span></p>
+            ${Number(i.stock) < 200 ? '<span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">Sắp hết!</span>' : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Mở / Đóng Modal Thêm Nguyên Liệu Tùy Biến
+    function openNewIngredientModal() { 
+      document.getElementById("newIngName").value = "";
+      document.getElementById("newIngUnit").value = "";
+      document.getElementById("newIngCost").value = "";
+      document.getElementById("newIngredientModal").classList.remove("hidden"); 
+    }
+    function closeNewIngredientModal() { document.getElementById("newIngredientModal").classList.add("hidden"); }
+
+    // Xử lý lưu dòng nguyên liệu mới
+    async function submitNewIngredient() {
+      const name = document.getElementById("newIngName").value.trim().toLowerCase();
+      const unit = document.getElementById("newIngUnit").value.trim();
+      const cost = Number(document.getElementById("newIngCost").value || 0);
+      
+      if (!name || !unit) {
+        return alert("Vui lòng điền đủ Tên mã và Đơn vị tính!");
+      }
+
+      const btn = document.getElementById("btnSubmitNewIng");
+      btn.disabled = true;
+      btn.innerText = "Đang tạo...";
+
+      try {
+        const { error } = await supabaseClient.from('inventory').insert([{
+          name: name,
+          unit: unit,
+          stock: 0, // Tồn kho ban đầu bằng 0, sau đó dùng phiếu nhập để nhập vào
+          cost_per_unit: cost
+        }]);
+
+        if (error) throw error;
+        
+        alert(`✅ Đã tạo mã nguyên liệu mới: ${name}`);
+        closeNewIngredientModal();
+        loadAdminData(); // Tải lại trang Admin để thấy dòng mới
+      } catch (err) {
+        alert("Lỗi tạo mã: " + err.message);
+      }
+      
+      btn.disabled = false;
+      btn.innerText = "Thêm Mới";
+    }
     // 1. CẤU HÌNH SUPABASE & KHÓA BẢO MẬT
     const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
     const SUPABASE_KEY = "sb_publishable_APrYxrIAhLb83S5sIIWQ-A_MZpby4Ik";
@@ -224,9 +382,9 @@
     const ADMIN_PIN = "8888";
 
     const BANK_CONFIG = {
-      id: "MB",
-      no: "0912345678",        // Sửa thành Số tài khoản của bạn
-      name: "NGUYEN VAN A"    // Sửa thành Tên chủ tài khoản
+      id: "VPBank",
+      no: "32638888",        // Sửa thành Số tài khoản của bạn
+      name: "NGUYEN DUONG TRUONG"    // Sửa thành Tên chủ tài khoản
     };
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -605,7 +763,26 @@
         stock: Number(stock),
         cost_per_unit: Number(cost)
       }]);
-      loadAdminData();
+let dbImportLogs = []; // Thêm biến lưu lịch sử nhập
+
+    async function loadAdminData() {
+      const [ordersRes, invRes, menuRes, importRes] = await Promise.all([
+        supabaseClient.from('orders').select('*').order('id', { ascending: false }),
+        supabaseClient.from('inventory').select('*').order('id', { ascending: true }),
+        supabaseClient.from('menu').select('*').order('id', { ascending: true }),
+        supabaseClient.from('import_logs').select('*').order('created_at', { ascending: false }).limit(20) // Lấy 20 lần nhập gần nhất
+      ]);
+
+      dbOrders = ordersRes.data || [];
+      dbInventory = invRes.data || [];
+      dbMenu = menuRes.data || [];
+      dbImportLogs = importRes.data || [];
+
+      calculateDashboardMetrics();
+      loadAdminOrders();
+      renderAdminInventory(); // Load tồn kho
+      renderAdminImportLogs(); // Load bảng lịch sử nhập
+    };
     }
 
     // 6. XỬ LÝ TRỢ LÝ AI TRONG ADMIN
@@ -669,7 +846,51 @@ Nhiệm vụ của bạn:
       btnSend.disabled = false;
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
+// === XỬ LÝ LẬP PHIẾU NHẬP HÀNG TỰ NHẢY GIÁ ===
+    function openImportModal() {
+      const select = document.getElementById("importIngredient");
+      // Liệt kê nguyên liệu hiện có trong kho để chọn
+      select.innerHTML = dbInventory.map(i => `<option value="${i.name}">${i.name} (hiện tồn: ${i.stock} ${i.unit})</option>`).join('');
+      document.getElementById("importQty").value = "";
+      document.getElementById("importTotalCost").value = "";
+      document.getElementById("importModal").classList.remove("hidden");
+    }
+    
+    function closeImportModal() { document.getElementById("importModal").classList.add("hidden"); }
 
+    async function submitImport() {
+      const name = document.getElementById("importIngredient").value;
+      const qty = Number(document.getElementById("importQty").value);
+      const totalCost = Number(document.getElementById("importTotalCost").value);
+      
+      if (!qty || qty <= 0 || !totalCost || totalCost < 0) {
+        return alert("Khống chế lỗi: Bạn phải nhập Số lượng và Tổng tiền hợp lệ để tránh hỏng thuật toán giá bình quân!");
+      }
+      
+      const btn = document.getElementById("btnSubmitImport");
+      btn.disabled = true;
+      btn.innerText = "Đang xử lý vào Database...";
+
+      try {
+        // Chỉ cần chèn 1 dòng lịch sử, Trí thông minh Supabase sẽ tự tính toán giá trung bình.
+        const { error } = await supabaseClient.from('import_logs').insert([{
+          ingredient_name: name,
+          added_qty: qty,
+          total_price: totalCost
+        }]);
+
+        if (error) throw error;
+        alert(`✅ NHẬP KHO THÀNH CÔNG!\n- Đã cộng: ${qty} vào mã ${name}\n- Hệ thống đã tự động tính toán lại Giá vốn trên từng gram/ml.`);
+        
+        closeImportModal();
+        loadAdminData(); // Tải lại toàn bộ dữ liệu, giá trị cốc cà phê sẽ tự động nhảy số theo.
+      } catch (err) {
+        alert("Lỗi nhập hàng: " + err.message);
+      }
+      
+      btn.disabled = false;
+      btn.innerText = "Lưu Phiếu Nhập";
+    }
     // Khởi chạy ứng dụng
     loadMenu();
   </script>
