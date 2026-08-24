@@ -214,7 +214,7 @@
   const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
   const GROQ_API_KEY = "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";
-  const ADMIN_PIN = "536125"; 
+  const VALID_PINS = ["536125", "8888"];
 
   const BANK_CONFIG = {
     id: "VPBank",
@@ -322,11 +322,14 @@
     const memo = `CF ${room.replace(/\s+/g, '')}`;
     const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.no}-compact.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
     
-    document.getElementById("qrImage").src = qrUrl;
+    document.getElementById("vietQrImg").src = qrUrl;
     document.getElementById("qrTotalText").innerText = total.toLocaleString('vi-VN') + "đ";
-    document.getElementById("qrMemoText").innerText = memo;
-    document.getElementById("qrTimeText").innerText = timeSlot;
-    document.getElementById("paymentModal").classList.remove("hidden");
+    document.getElementById("qrRoomText").innerText = `${room} (${timeSlot})`;
+    document.getElementById("qrModal").classList.remove("hidden");
+  }
+
+  function closePaymentModal() {
+    document.getElementById("qrModal")?.classList.add("hidden");
   }
 
   async function confirmOrderSuccess() {
@@ -355,7 +358,7 @@
         note: note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
       }]);
       if (error) throw error;
-      alert(`🎉 Đặt đơn thành công! Chúng mình sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
+      alert(`🎉 Đặt đơn thành công! Quán sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
       location.reload();
     } catch (err) {
       alert("Lỗi: " + err.message);
@@ -365,26 +368,46 @@
   }
 
   // ==========================================
-  // QUẢN TRỊ VIÊN & TÍNH TOÁN DỮ LIỆU
+  // KHỐI QUẢN TRỊ ADMIN & POPUP PIN
   // ==========================================
-  function promptAdmin() {
-  const pin = prompt("Nhập mã PIN Quản trị:");
-  if (pin === "truonG25@") {
-    // Tự động quét và mở đúng khung Admin dù ID đặt là gì
-    const adminEl = document.getElementById("adminModal") 
-                 || document.getElementById("adminView") 
-                 || document.getElementById("adminSection");
+  function openPinModal() {
+    const modal = document.getElementById("pinModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      const input = document.getElementById("pinInput");
+      if (input) { input.value = ""; input.focus(); }
+    }
+  }
 
-    if (adminEl) {
-      adminEl.classList.remove("hidden");
+  function closePinModal() {
+    document.getElementById("pinModal")?.classList.add("hidden");
+  }
+
+  function submitPin() {
+    const pin = document.getElementById("pinInput")?.value.trim();
+    if (VALID_PINS.includes(pin)) {
+      closePinModal();
+      document.getElementById("customerView")?.classList.add("hidden");
+      document.querySelector("footer")?.classList.add("hidden");
+      const bottomBar = document.querySelector(".fixed.bottom-0");
+      if (bottomBar) bottomBar.classList.add("hidden");
+
+      document.getElementById("adminView")?.classList.remove("hidden");
       loadAdminData();
     } else {
-      alert("Lỗi: Không tìm thấy khung Admin trong file HTML!");
+      alert("❌ Mã PIN không đúng!");
+      const input = document.getElementById("pinInput");
+      if (input) input.value = "";
     }
-  } else if (pin) {
-    alert("❌ Mã PIN không đúng!");
   }
-}
+
+  function exitAdminView() {
+    document.getElementById("adminView")?.classList.add("hidden");
+    document.getElementById("customerView")?.classList.remove("hidden");
+    document.querySelector("footer")?.classList.remove("hidden");
+    const bottomBar = document.querySelector(".fixed.bottom-0");
+    if (bottomBar) bottomBar.classList.remove("hidden");
+  }
 
   async function loadAdminData() {
     try {
@@ -407,9 +430,63 @@
   }
 
   function calculateAdminFinancials() {
-    const revenue = dbOrders.filter(o => o.status !== 'ĐÃ HỦY').reduce((sum, o) => sum + Number(o.total_price), 0);
-    const revEl = document.getElementById("adminRevText");
-    if (revEl) revEl.innerText = revenue.toLocaleString('vi-VN') + "đ";
+    const activeOrders = dbOrders.filter(o => o.status !== 'ĐÃ HỦY');
+    const revenue = activeOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
+    
+    // Tính tổng giá vốn (COGS)
+    let totalCost = 0;
+    activeOrders.forEach(ord => {
+      if (Array.isArray(ord.items)) {
+        ord.items.forEach(it => {
+          const menuItem = dbMenu.find(m => m.id == it.id);
+          if (menuItem && menuItem.bom) {
+            for (let ing in menuItem.bom) {
+              const invItem = dbInventory.find(i => i.name === ing);
+              if (invItem) {
+                totalCost += (Number(menuItem.bom[ing]) * Number(invItem.cost_per_unit || 0)) * it.qty;
+              }
+            }
+          }
+        });
+      }
+    });
+
+    const profit = revenue - totalCost;
+
+    if (document.getElementById("dashRevenue")) document.getElementById("dashRevenue").innerText = revenue.toLocaleString('vi-VN') + "đ";
+    if (document.getElementById("dashCost")) document.getElementById("dashCost").innerText = Math.round(totalCost).toLocaleString('vi-VN') + "đ";
+    if (document.getElementById("dashProfit")) document.getElementById("dashProfit").innerText = Math.round(profit).toLocaleString('vi-VN') + "đ";
+    if (document.getElementById("adminOrderCount")) document.getElementById("adminOrderCount").innerText = dbOrders.length;
+  }
+
+  function switchAdminTab(tab) {
+    const sections = {
+      orders: document.getElementById("adminOrdersSection"),
+      menu: document.getElementById("adminMenuSection"),
+      inventory: document.getElementById("adminInventorySection")
+    };
+    const buttons = {
+      orders: document.getElementById("tabBtnOrders"),
+      menu: document.getElementById("tabBtnMenu"),
+      inventory: document.getElementById("tabBtnInv")
+    };
+
+    for (let key in sections) {
+      if (sections[key]) {
+        if (key === tab) {
+          sections[key].classList.remove("hidden");
+        } else {
+          sections[key].classList.add("hidden");
+        }
+      }
+      if (buttons[key]) {
+        if (key === tab) {
+          buttons[key].className = "py-2 rounded-lg bg-white shadow text-amber-950 font-bold";
+        } else {
+          buttons[key].className = "py-2 rounded-lg text-stone-600 font-bold";
+        }
+      }
+    }
   }
 
   function loadAdminOrders() {
@@ -507,20 +584,15 @@
     }
   }
 
-  function switchTab(tab) {
-    ['orders', 'menu', 'inv'].forEach(t => {
-      document.getElementById(`tab_${t}`)?.classList.add('hidden');
-      document.getElementById(`btn_tab_${t}`)?.classList.remove('bg-white', 'shadow-sm', 'font-bold', 'text-stone-900');
-    });
-    document.getElementById(`tab_${tab}`)?.classList.remove('hidden');
-    document.getElementById(`btn_tab_${tab}`)?.classList.add('bg-white', 'shadow-sm', 'font-bold', 'text-stone-900');
+  // ==========================================
+  // TRỢ LÝ AI (GROQ - TỰ SỬA DỮ LIỆU)
+  // ==========================================
+  function openAiChatModal() {
+    document.getElementById("aiChatModal")?.classList.remove("hidden");
   }
 
-  // ==========================================
-  // TRỢ LÝ AI (GROQ - TỰ SỬA SUPABASE)
-  // ==========================================
-  function openAiModal() {
-    document.getElementById("aiModal").classList.remove("hidden");
+  function closeAiChatModal() {
+    document.getElementById("aiChatModal")?.classList.add("hidden");
   }
 
   async function sendAiMessage() {
@@ -539,7 +611,6 @@
     btnSend.disabled = true;
 
     try {
-      const contextData = { menu: dbMenu, inventory: dbInventory, orders: dbOrders };
       const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
 Dữ liệu Supabase hiện tại:
 - Menu: ${JSON.stringify(dbMenu)}
