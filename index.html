@@ -368,14 +368,23 @@
   // QUẢN TRỊ VIÊN & TÍNH TOÁN DỮ LIỆU
   // ==========================================
   function promptAdmin() {
-    const pin = prompt("Nhập mã PIN Quản trị:");
-    if (pin === ADMIN_PIN) {
-      document.getElementById("adminModal").classList.remove("hidden");
+  const pin = prompt("Nhập mã PIN Quản trị:");
+  if (pin === "truonG25@") {
+    // Tự động quét và mở đúng khung Admin dù ID đặt là gì
+    const adminEl = document.getElementById("adminModal") 
+                 || document.getElementById("adminView") 
+                 || document.getElementById("adminSection");
+
+    if (adminEl) {
+      adminEl.classList.remove("hidden");
       loadAdminData();
-    } else if (pin) {
-      alert("Mã PIN không đúng!");
+    } else {
+      alert("Lỗi: Không tìm thấy khung Admin trong file HTML!");
     }
+  } else if (pin) {
+    alert("❌ Mã PIN không đúng!");
   }
+}
 
   async function loadAdminData() {
     try {
