@@ -23,7 +23,7 @@
     </div>
     <div class="flex items-center gap-2">
       <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-semibold">Đang nhận đơn</span>
-      <button type="button" onclick="openPinModal()" class="text-amber-200 hover:text-white text-base p-2 bg-amber-900/60 rounded-lg border border-amber-700/50 cursor-pointer shadow">🔒</button>
+      <button type="button" onclick="promptAdmin()" class="text-amber-200 hover:text-white text-base p-2 bg-amber-900/60 rounded-lg border border-amber-700/50 cursor-pointer shadow">🔒</button>
     </div>
   </header>
 
@@ -207,437 +207,408 @@
   </div>
 
   <!-- JAVASCRIPT ĐIỀU HÀNH -->
-  <script>
-    const GROQ_API_KEY = "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";
-    const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_APrYxrIAhLb83S5sIIWQ-A_MZpby4Ik";
-    const ADMIN_PIN = "536125";
+<script>
+  // ==========================================
+  // CẤU HÌNH DỮ LIỆU & KHÓA DỊCH VỤ
+  // ==========================================
+  const SUPABASE_URL = "https://your-project.supabase.co"; // Giữ nguyên URL Supabase của bạn
+  const SUPABASE_KEY = "your-supabase-anon-key";         // Giữ nguyên Anon Key của bạn
+  const GROQ_API_KEY = "gsk_dán_mã_khoá_groq_của_bạn_vào_đây";
+  const ADMIN_PIN = "536125"; 
 
-    const BANK_CONFIG = {
-      id: "VPBank",
-      no: "32638888",
-      name: "NGUYEN DUONG TRUONG"
-    };
+  const BANK_CONFIG = {
+    id: "VPBank",
+    no: "32638888",
+    name: "NGUYEN DUONG TRUONG"
+  };
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let dbMenu = [];
-    let dbInventory = [];
-    let dbOrders = [];
-    let cart = {};
+  let dbMenu = [];
+  let dbInventory = [];
+  let dbOrders = [];
+  let cart = {};
 
-    async function loadMenu() {
-      const menuListEl = document.getElementById("menuList");
-      try {
-        const [menuRes, invRes] = await Promise.all([
-          supabaseClient.from('menu').select('*').order('id', { ascending: true }),
-          supabaseClient.from('inventory').select('*')
-        ]);
-        dbMenu = menuRes.data || [];
-        dbInventory = invRes.data || [];
-        renderCustomerMenu();
-      } catch (err) {
-        menuListEl.innerHTML = `<div class="bg-red-50 text-red-600 p-3 rounded-xl text-xs text-center">Lỗi: ${err.message}</div>`;
-      }
-    }
-
-    function renderCustomerMenu() {
-      const menuListEl = document.getElementById("menuList");
-      const activeItems = dbMenu.filter(m => m.status === 'BẬT');
-      if (activeItems.length === 0) {
-        menuListEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Hôm nay quán tạm nghỉ chốt đơn sớm. Hẹn gặp lại bạn tối mai! ☕</p>`;
-        return;
-      }
-      menuListEl.innerHTML = activeItems.map(item => `
-        <div class="bg-white p-3 rounded-2xl border border-stone-200 flex items-center justify-between shadow-sm gap-3">
-          <div class="w-16 h-16 bg-stone-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border">
-            ${item.image_url ? `<img src="${item.image_url}" class="w-full h-full object-cover" alt="${item.name}">` : `<span class="text-2xl">☕</span>`}
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-sm text-stone-900 truncate">${item.name}</h3>
-            <p class="text-[11px] text-stone-500 line-clamp-1">${item.description || ''}</p>
-            <p class="text-sm font-black text-amber-950 mt-0.5">${item.price.toLocaleString('vi-VN')}đ</p>
-          </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <button onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-stone-100 active:bg-stone-200 rounded-full font-bold text-stone-700 flex items-center justify-center">-</button>
-            <span id="qty-${item.id}" class="text-sm font-bold w-4 text-center">0</span>
-            <button onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-[#2B170E] active:bg-amber-900 rounded-full font-bold text-white flex items-center justify-center">+</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function updateCart(id, delta) {
-      cart[id] = (cart[id] || 0) + delta;
-      if (cart[id] <= 0) delete cart[id];
-      const qtyEl = document.getElementById(`qty-${id}`);
-      if (qtyEl) qtyEl.innerText = cart[id] || 0;
-      recalculateCart();
-    }
-
-    function recalculateCart() {
-      let total = 0, count = 0;
-      for (let id in cart) {
-        const item = dbMenu.find(m => m.id == id);
-        if (item) {
-          total += item.price * cart[id];
-          count += cart[id];
-        }
-      }
-      document.getElementById("cartCount").innerText = count;
-      document.getElementById("cartTotal").innerText = total.toLocaleString('vi-VN') + "đ";
-      checkFormValid();
-    }
-
-    function checkFormValid() {
-      const room = document.getElementById("roomInput").value.trim();
-      const name = document.getElementById("nameInput").value.trim();
-      const phone = document.getElementById("phoneInput").value.trim();
-      const hasItems = Object.keys(cart).length > 0;
-      const validRoom = /^[ABCD](0[2-9]|[12][0-9]|30|12A)[0-1][0-9][A-Z]?$/.test(room);
-      document.getElementById("btnSubmitOrder").disabled = !(validRoom && name && phone && hasItems);
-    }
-
-    function openPaymentModal() {
-      const room = document.getElementById("roomInput").value.trim();
-      const phone = document.getElementById("phoneInput").value.trim();
-      let total = 0;
-      for (let id in cart) {
-        const item = dbMenu.find(m => m.id == id);
-        if (item) total += item.price * cart[id];
-      }
-      const memo = `${room} ${phone}`.replace(/\s+/g, '');
-      const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.no}-compact2.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
-      document.getElementById("vietQrImg").src = qrUrl;
-      document.getElementById("qrRoomText").innerText = room;
-      document.getElementById("qrTotalText").innerText = total.toLocaleString('vi-VN') + "đ";
-      document.getElementById("qrModal").classList.remove("hidden");
-    }
-
-    function closePaymentModal() { document.getElementById("qrModal").classList.add("hidden"); }
-
-async function confirmOrderSuccess() {
-      const btn = document.getElementById("btnConfirmPaid");
-      btn.innerText = "Đang ghi nhận đơn...";
-      btn.disabled = true;
-      const room = document.getElementById("roomInput").value.trim();
-      const name = document.getElementById("nameInput").value.trim();
-      const phone = document.getElementById("phoneInput").value.trim();
-      const deliveryTime = document.getElementById("timeSlotInput").value;
-      const note = document.getElementById("noteInput").value.trim();
-
-      let total = 0, orderItems = [];
-      for (let id in cart) {
-        const item = dbMenu.find(m => m.id == id);
-        if (item) {
-          total += item.price * cart[id];
-          orderItems.push({ id: item.id, qty: cart[id] });
-        }
-      }
-
-      try {
-        const { error } = await supabaseClient.from('orders').insert([{
-          room: room, 
-          name: name, 
-          phone: phone, 
-          delivery_time: deliveryTime,
-          note: note, 
-          items: orderItems, 
-          total_price: total, 
-          status: 'CHƯA GIAO'
-        }]);
-        if (error) throw error;
-        alert(`🎉 Đặt thành công! Chúng mình sẽ treo trước cửa phòng ${room} trong khung giờ ${deliveryTime}.`);
-        location.reload();
-      } catch (err) {
-        alert("Lỗi tạo đơn: " + err.message);
-        btn.innerText = "Tôi đã chuyển khoản xong ✅";
-        btn.disabled = false;
-      }
-    }
-    // ADMIN PIN MODAL
-    function openPinModal() {
-      document.getElementById("pinInput").value = "";
-      document.getElementById("pinModal").classList.remove("hidden");
-    }
-    function closePinModal() {
-      document.getElementById("pinModal").classList.add("hidden");
-    }
-    function submitPin() {
-      const pin = document.getElementById("pinInput").value;
-      if (pin === ADMIN_PIN) {
-        closePinModal();
-        document.getElementById("customerView").classList.add("hidden");
-        document.getElementById("adminView").classList.remove("hidden");
-        loadAdminData();
-      } else {
-        alert("Sai mã PIN!");
-      }
-    }
-    function exitAdminView() {
-      document.getElementById("adminView").classList.add("hidden");
-      document.getElementById("customerView").classList.remove("hidden");
-      loadMenu();
-    }
-
-    async function loadAdminData() {
-      const [ordersRes, invRes, menuRes] = await Promise.all([
-        supabaseClient.from('orders').select('*').order('id', { ascending: false }),
-        supabaseClient.from('inventory').select('*'),
-        supabaseClient.from('menu').select('*')
+  // ==========================================
+  // LUỒNG DỮ LIỆU KHÁCH HÀNG (MENU & ĐẶT ĐƠN)
+  // ==========================================
+  async function loadMenu() {
+    const listEl = document.getElementById("menuList");
+    try {
+      const [menuRes, invRes] = await Promise.all([
+        supabaseClient.from('menu').select('*').order('id', { ascending: true }),
+        supabaseClient.from('inventory').select('*')
       ]);
-      dbOrders = ordersRes.data || [];
-      dbInventory = invRes.data || [];
+
+      if (menuRes.error) throw menuRes.error;
+      if (invRes.error) throw invRes.error;
+
       dbMenu = menuRes.data || [];
-
-      calculateDashboardMetrics();
-      loadAdminOrders();
+      dbInventory = invRes.data || [];
+      renderCustomerMenu();
+    } catch (err) {
+      listEl.innerHTML = `<div class="bg-red-50 text-red-600 p-3 rounded-xl text-xs text-center">⚠️ Không tải được thực đơn: ${err.message}</div>`;
     }
+  }
 
-    function calculateDashboardMetrics() {
-      let revenue = 0, totalCost = 0;
-      const costMap = {};
-      dbInventory.forEach(i => { costMap[i.name] = Number(i.cost_per_unit || 0); });
-
-      dbOrders.forEach(o => {
-        if (o.status !== 'ĐÃ HỦY') {
-          revenue += Number(o.total_price || 0);
-          if (Array.isArray(o.items)) {
-            o.items.forEach(it => {
-              const m = dbMenu.find(x => x.id === it.id);
-              if (m && m.bom) {
-                let cupCost = 0;
-                for (let ing in m.bom) cupCost += (m.bom[ing] * (costMap[ing] || 0));
-                totalCost += (cupCost * it.qty);
-              }
-            });
-          }
-        }
-      });
-      document.getElementById("dashRevenue").innerText = revenue.toLocaleString('vi-VN') + "đ";
-      document.getElementById("dashCost").innerText = Math.round(totalCost).toLocaleString('vi-VN') + "đ";
-      document.getElementById("dashProfit").innerText = Math.round(revenue - totalCost).toLocaleString('vi-VN') + "đ";
-      document.getElementById("adminOrderCount").innerText = dbOrders.length;
+  function renderCustomerMenu() {
+    const listEl = document.getElementById("menuList");
+    if (dbMenu.length === 0) {
+      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-4">Chưa có món nào được bật.</p>`;
+      return;
     }
-
-    function switchAdminTab(tab) {
-      document.getElementById("adminOrdersSection").classList.toggle("hidden", tab !== 'orders');
-      document.getElementById("adminMenuSection").classList.toggle("hidden", tab !== 'menu');
-      document.getElementById("adminInventorySection").classList.toggle("hidden", tab !== 'inventory');
-
-      document.getElementById("tabBtnOrders").className = tab === 'orders' ? 'py-2 rounded-lg bg-white shadow text-amber-950 font-bold' : 'py-2 rounded-lg text-stone-600';
-      document.getElementById("tabBtnMenu").className = tab === 'menu' ? 'py-2 rounded-lg bg-white shadow text-amber-950 font-bold' : 'py-2 rounded-lg text-stone-600';
-      document.getElementById("tabBtnInv").className = tab === 'inventory' ? 'py-2 rounded-lg bg-white shadow text-amber-950 font-bold' : 'py-2 rounded-lg text-stone-600';
-
-      if (tab === 'menu') renderAdminMenu();
-      if (tab === 'inventory') renderAdminInventory();
-    }
-
-function loadAdminOrders() {
-      const listEl = document.getElementById("adminOrdersList");
-      if (dbOrders.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Chưa có đơn hàng nào.</p>`;
-        return;
-      }
-      const sorted = [...dbOrders].sort((a, b) => {
-        let flrA = parseInt(a.room.match(/^[ABCD](\d+|12A)/)?.[1]?.replace("12A","13") || 0);
-        let flrB = parseInt(b.room.match(/^[ABCD](\d+|12A)/)?.[1]?.replace("12A","13") || 0);
-        return flrB - flrA;
-      });
-      listEl.innerHTML = sorted.map(o => `
-        <div class="p-3 rounded-xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1 text-xs">
-          <div class="flex justify-between items-center">
-            <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-md">${o.room}</span>
-            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '07:05 - 07:25'}</span>
-            <button onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
-              ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
-            </button>
-          </div>
-          <div class="text-stone-700"><b>Khách:</b> ${o.name} - ${o.phone}</div>
-          <p class="text-stone-800"><b>Món:</b> ${formatOrderItems(o.items)}</p>
-          ${o.note ? `<p class="text-amber-900 bg-amber-50 p-1.5 rounded text-[11px]"><b>Ghi chú:</b> ${o.note}</p>` : ''}
-          <p class="text-stone-400 text-[10px]">Tổng: <b>${o.total_price.toLocaleString('vi-VN')}đ</b> • Lúc: ${new Date(o.created_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</p>
+    listEl.innerHTML = dbMenu.map(item => `
+      <div class="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between gap-3">
+        <img src="${item.img || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200'}" class="w-14 h-14 object-cover rounded-xl border border-stone-100 flex-shrink-0">
+        <div class="flex-grow">
+          <h4 class="font-bold text-sm text-stone-900 leading-tight">${item.name}</h4>
+          <p class="text-[11px] text-stone-400">${item.desc || ''}</p>
+          <p class="font-bold text-xs text-[#2B170E] mt-0.5">${item.price.toLocaleString('vi-VN')}đ</p>
         </div>
-      `).join('');
+        ${item.status === 'BẬT' ? `
+          <div class="flex items-center gap-2 bg-stone-100 rounded-xl p-1">
+            <button onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-white rounded-lg font-bold text-xs shadow-sm">-</button>
+            <span id="qty_${item.id}" class="font-bold text-xs w-4 text-center">0</span>
+            <button onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-[#2B170E] text-white rounded-lg font-bold text-xs shadow-sm">+</button>
+          </div>` : `<span class="text-[11px] font-bold text-stone-400 bg-stone-100 px-2 py-1 rounded-lg">Hết món</span>`}
+      </div>
+    `).join('');
+  }
+
+  function updateCart(id, change) {
+    cart[id] = (cart[id] || 0) + change;
+    if (cart[id] <= 0) delete cart[id];
+    document.getElementById(`qty_${id}`).innerText = cart[id] || 0;
+    calculateTotal();
+    checkFormValid();
+  }
+
+  function calculateTotal() {
+    let total = 0, count = 0;
+    for (let id in cart) {
+      const item = dbMenu.find(m => m.id == id);
+      if (item) {
+        total += item.price * cart[id];
+        count += cart[id];
+      }
     }
-    function formatOrderItems(items) {
-      if (!Array.isArray(items)) return '';
-      return items.map(i => {
-        const m = dbMenu.find(x => x.id === i.id);
-        return `${m ? m.name : 'Món #' + i.id} (x${i.qty})`;
-      }).join(', ');
+    document.getElementById("totalCartCount").innerText = count;
+    document.getElementById("totalCartPrice").innerText = total.toLocaleString('vi-VN') + "đ";
+  }
+
+  function checkFormValid() {
+    const room = document.getElementById("roomInput")?.value.trim();
+    const name = document.getElementById("nameInput")?.value.trim();
+    const phone = document.getElementById("phoneInput")?.value.trim();
+    const hasItems = Object.keys(cart).length > 0;
+    const btn = document.getElementById("btnCheckout");
+    if (btn) btn.disabled = !(room && name && phone && hasItems);
+  }
+
+  function openQrModal() {
+    const room = document.getElementById("roomInput").value.trim();
+    const timeSlot = document.getElementById("timeSlotInput").value;
+    let total = 0;
+    for (let id in cart) {
+      const item = dbMenu.find(m => m.id == id);
+      if (item) total += item.price * cart[id];
+    }
+    const memo = `CF ${room.replace(/\s+/g, '')}`;
+    const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.no}-compact.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
+    
+    document.getElementById("qrImage").src = qrUrl;
+    document.getElementById("qrTotalText").innerText = total.toLocaleString('vi-VN') + "đ";
+    document.getElementById("qrMemoText").innerText = memo;
+    document.getElementById("qrTimeText").innerText = timeSlot;
+    document.getElementById("paymentModal").classList.remove("hidden");
+  }
+
+  async function confirmOrderSuccess() {
+    const btn = document.getElementById("btnConfirmPaid");
+    btn.innerText = "Đang tạo đơn...";
+    btn.disabled = true;
+
+    const room = document.getElementById("roomInput").value.trim();
+    const name = document.getElementById("nameInput").value.trim();
+    const phone = document.getElementById("phoneInput").value.trim();
+    const deliveryTime = document.getElementById("timeSlotInput").value;
+    const note = document.getElementById("noteInput").value.trim();
+
+    let total = 0, orderItems = [];
+    for (let id in cart) {
+      const item = dbMenu.find(m => m.id == id);
+      if (item) {
+        total += item.price * cart[id];
+        orderItems.push({ id: item.id, qty: cart[id] });
+      }
     }
 
-    async function toggleOrderStatus(id, curStatus) {
-      const nextStatus = curStatus === 'ĐÃ TREO CỬA' ? 'CHƯA GIAO' : 'ĐÃ TREO CỬA';
-      await supabaseClient.from('orders').update({ status: nextStatus }).eq('id', id);
-      const o = dbOrders.find(x => x.id === id);
-      if (o) o.status = nextStatus;
+    try {
+      const { error } = await supabaseClient.from('orders').insert([{
+        room: room, name: name, phone: phone, delivery_time: deliveryTime,
+        note: note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
+      }]);
+      if (error) throw error;
+      alert(`🎉 Đặt đơn thành công! Quán sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
+      location.reload();
+    } catch (err) {
+      alert("Lỗi: " + err.message);
+      btn.innerText = "Tôi đã chuyển khoản xong ✅";
+      btn.disabled = false;
+    }
+  }
+
+  // ==========================================
+  // QUẢN TRỊ VIÊN & AI CO-PILOT
+  // ==========================================
+  function promptAdmin() {
+    const pin = prompt("Nhập mã PIN Quản trị:");
+    if (pin === ADMIN_PIN) {
+      document.getElementById("adminModal").classList.remove("hidden");
+      loadAdminData();
+    } else if (pin) {
+      alert("Mã PIN không đúng!");
+    }
+  }
+
+  async function loadAdminData() {
+    try {
+      const [oRes, mRes, iRes] = await Promise.all([
+        supabaseClient.from('orders').select('*').order('id', { ascending: false }),
+        supabaseClient.from('menu').select('*').order('id', { ascending: true }),
+        supabaseClient.from('inventory').select('*').order('id', { ascending: true })
+      ]);
+      dbOrders = oRes.data || [];
+      dbMenu = mRes.data || [];
+      dbInventory = iRes.data || [];
+
+      calculateAdminFinancials();
       loadAdminOrders();
-    }
-
-    function renderAdminInventory() {
-  const listEl = document.getElementById("adminInvList");
-  listEl.innerHTML = dbInventory.map(i => `
-    <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
-      <div>
-        <p class="font-bold text-stone-800">${i.display_name || i.name} <span class="text-[10px] text-stone-400 font-normal">(${i.name})</span></p>
-        <p class="text-stone-400 text-[11px]">Giá vốn: <b>${i.cost_per_unit}đ/${i.unit}</b></p>
-      </div>
-      <div class="text-right">
-        <p class="font-black text-sm ${Number(i.stock) < 200 ? 'text-red-600' : 'text-stone-800'}">${i.stock} ${i.unit}</p>
-      </div>
-    </div>`).join('');
-        }
-        return `
-          <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs gap-2 shadow-sm">
-            <div class="flex-1">
-              <p class="font-bold text-stone-900">${m.name}</p>
-              <div class="text-[11px] text-stone-500 mt-0.5">Vốn: <b class="text-red-600">${Math.round(cupCost).toLocaleString('vi-VN')}đ</b> • Lãi: <b class="text-emerald-600">${Math.round(m.price - cupCost).toLocaleString('vi-VN')}đ</b></div>
-              <div class="flex items-center gap-1 mt-1.5">
-                <span class="text-stone-500 text-[11px]">Giá bán:</span>
-                <input type="number" value="${m.price}" onchange="updateDbPrice(${m.id}, this.value)" class="border border-stone-300 px-2 py-0.5 rounded-lg w-20 font-bold text-amber-950 outline-none">
-                <span>đ</span>
-              </div>
-            </div>
-            <button onclick="toggleDbMenuStatus(${m.id}, '${m.status}')" class="px-3 py-1.5 rounded-xl font-bold text-[11px] ${m.status === 'BẬT' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'}">
-              ${m.status === 'BẬT' ? 'ĐANG BÁN' : 'HẾT MÓN'}
-            </button>
-          </div>`;
-      }).join('');
-    }
-
-    async function updateDbPrice(id, newPrice) {
-      await supabaseClient.from('menu').update({ price: Number(newPrice) }).eq('id', id);
-      const m = dbMenu.find(x => x.id === id);
-      if (m) m.price = Number(newPrice);
-      calculateDashboardMetrics();
-    }
-
-    async function toggleDbMenuStatus(id, currentStatus) {
-      const next = currentStatus === 'BẬT' ? 'HẾT MÓN' : 'BẬT';
-      await supabaseClient.from('menu').update({ status: next }).eq('id', id);
-      const m = dbMenu.find(x => x.id === id);
-      if (m) m.status = next;
       renderAdminMenu();
+      renderAdminInventory();
+    } catch (err) {
+      console.error("Lỗi tải dữ liệu Admin:", err);
     }
+  }
 
-    function renderAdminInventory() {
-      const listEl = document.getElementById("adminInvList");
-      listEl.innerHTML = dbInventory.map(i => `
-        <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
-          <div>
-            <p class="font-bold text-stone-800">${i.name}</p>
-            <p class="text-stone-400 text-[11px]">Giá vốn: <b>${i.cost_per_unit}đ/${i.unit}</b></p>
-          </div>
-          <div class="text-right">
-            <p class="font-black text-sm ${Number(i.stock) < 200 ? 'text-red-600' : 'text-stone-800'}">${i.stock} ${i.unit}</p>
-          </div>
-        </div>`).join('');
+  function calculateAdminFinancials() {
+    const revenue = dbOrders.filter(o => o.status !== 'ĐÃ HỦY').reduce((sum, o) => sum + Number(o.total_price), 0);
+    document.getElementById("adminRevText").innerText = revenue.toLocaleString('vi-VN') + "đ";
+  }
+
+  function loadAdminOrders() {
+    const listEl = document.getElementById("adminOrdersList");
+    if (dbOrders.length === 0) {
+      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Chưa có đơn hàng nào.</p>`;
+      return;
     }
+    listEl.innerHTML = dbOrders.map(o => `
+      <div class="p-3 rounded-xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1 text-xs">
+        <div class="flex justify-between items-center">
+          <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-md">${o.room}</span>
+          <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '06:45 - 07:05'}</span>
+          <button onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
+            ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
+          </button>
+        </div>
+        <div class="text-stone-700"><b>Khách:</b> ${o.name} - ${o.phone}</div>
+        <p class="text-stone-800"><b>Món:</b> ${formatOrderItems(o.items)}</p>
+        ${o.note ? `<p class="text-amber-900 bg-amber-50 p-1.5 rounded text-[11px]"><b>Ghi chú:</b> ${o.note}</p>` : ''}
+      </div>
+    `).join('');
+  }
 
-    // AI CHAT
-    function openAiChatModal() { document.getElementById("aiChatModal").classList.remove("hidden"); }
-    function closeAiChatModal() { document.getElementById("aiChatModal").classList.add("hidden"); }
+  function formatOrderItems(items) {
+    if (!items || !Array.isArray(items)) return 'Không có thông tin món';
+    return items.map(it => {
+      const m = dbMenu.find(menuItem => menuItem.id == it.id);
+      return `${m ? m.name : 'Món #' + it.id} x ${it.qty}`;
+    }).join(', ');
+  }
 
-async function sendAiMessage() {
-  const inputEl = document.getElementById("aiUserInput");
-  const msgContainer = document.getElementById("aiChatMessages");
-  const btnSend = document.getElementById("btnSendAi");
-  const question = inputEl.value.trim();
-  if (!question) return;
+  async function toggleOrderStatus(id, currentStatus) {
+    const newStatus = currentStatus === 'ĐÃ TREO CỬA' ? 'CHƯA GIAO' : 'ĐÃ TREO CỬA';
+    await supabaseClient.from('orders').update({ status: newStatus }).eq('id', id);
+    loadAdminData();
+  }
 
-  // Hiển thị câu hỏi
-  msgContainer.innerHTML += `
-    <div class="flex justify-end">
-      <div class="bg-[#2B170E] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${question}</div>
-    </div>`;
-  inputEl.value = "";
-  msgContainer.scrollTop = msgContainer.scrollHeight;
+  function renderAdminMenu() {
+    const listEl = document.getElementById("adminMenuList");
+    listEl.innerHTML = dbMenu.map(m => `
+      <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
+        <div>
+          <p class="font-bold text-stone-800">${m.name}</p>
+          <p class="text-stone-500">Giá: <b>${m.price.toLocaleString('vi-VN')}đ</b></p>
+        </div>
+        <button onclick="toggleMenuItem(${m.id}, '${m.status}')" class="px-3 py-1 rounded-xl font-bold ${m.status === 'BẬT' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+          ${m.status}
+        </button>
+      </div>
+    `).join('');
+  }
 
-  const loadingId = "load_" + Date.now();
-  msgContainer.innerHTML += `
-    <div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">
-      Đang phân tích dữ liệu Supabase...
-    </div>`;
-  btnSend.disabled = true;
+  async function toggleMenuItem(id, currentStatus) {
+    const newStatus = currentStatus === 'BẬT' ? 'HẾT MÓN' : 'BẬT';
+    await supabaseClient.from('menu').update({ status: newStatus }).eq('id', id);
+    loadAdminData();
+  }
 
-  try {
-    const contextData = { menu: dbMenu, inventory: dbInventory, orders: dbOrders };
- const systemPrompt = `Bạn là Trợ lý Kỹ thuật kiêm Vận hành cấp cao của quán Cà Phê Treo Cửa.
-Dữ liệu Supabase hiện tại:
+  function renderAdminInventory() {
+    const listEl = document.getElementById("adminInvList");
+    listEl.innerHTML = dbInventory.map(i => `
+      <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
+        <div>
+          <p class="font-bold text-stone-800">${i.display_name || i.name} <span class="text-[10px] text-stone-400 font-normal">(${i.name})</span></p>
+          <p class="text-stone-400 text-[11px]">Giá vốn: <b>${i.cost_per_unit}đ/${i.unit}</b></p>
+        </div>
+        <p class="font-black text-sm text-stone-800">${i.stock} ${i.unit}</p>
+      </div>
+    `).join('');
+  }
+
+  async function promptNewStock() {
+    const name = prompt("Nhập mã nguyên liệu (robusta_g, sua_dac_g, duong_g, sua_tuoi_ml, kem_beo_ml, chai_nhua):");
+    if (!name) return;
+    const qty = prompt(`Số lượng ${name} nhập thêm:`);
+    if (!qty || isNaN(qty)) return;
+    const cost = prompt("Tổng tiền hóa đơn lô này (đ):");
+    if (!cost || isNaN(cost)) return;
+
+    try {
+      const { error } = await supabaseClient.from('import_logs').insert([{
+        ingredient_name: name.trim().toLowerCase(),
+        added_qty: Number(qty),
+        total_price: Number(cost)
+      }]);
+      if (error) throw error;
+      alert(`✅ Đã nhập thành công ${qty} vào kho!`);
+      loadAdminData();
+    } catch (err) {
+      alert("Lỗi nhập kho: " + err.message);
+    }
+  }
+
+  function switchTab(tab) {
+    ['orders', 'menu', 'inv'].forEach(t => {
+      document.getElementById(`tab_${t}`).classList.add('hidden');
+      document.getElementById(`btn_tab_${t}`).classList.remove('bg-white', 'shadow-sm', 'font-bold', 'text-stone-900');
+    });
+    document.getElementById(`tab_${tab}`).classList.remove('hidden');
+    document.getElementById(`btn_tab_${tab}`).classList.add('bg-white', 'shadow-sm', 'font-bold', 'text-stone-900');
+  }
+
+  // ==========================================
+  // TRỢ LÝ AI (GROQ LLAMA-3 / GPT-OSS)
+  // ==========================================
+  function openAiModal() {
+    document.getElementById("aiModal").classList.remove("hidden");
+  }
+
+  async function sendAiMessage() {
+    const inputEl = document.getElementById("aiUserInput");
+    const msgContainer = document.getElementById("aiChatMessages");
+    const btnSend = document.getElementById("btnSendAi");
+    const question = inputEl.value.trim();
+    if (!question) return;
+
+    msgContainer.innerHTML += `<div class="flex justify-end"><div class="bg-[#2B170E] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${question}</div></div>`;
+    inputEl.value = "";
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    const loadingId = "load_" + Date.now();
+    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý dữ liệu...</div>`;
+    btnSend.disabled = true;
+
+    try {
+      const contextData = { menu: dbMenu, inventory: dbInventory, orders: dbOrders };
+      const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
+Dữ liệu Supabase:
 - Menu: ${JSON.stringify(dbMenu)}
 - Tồn kho: ${JSON.stringify(dbInventory)}
 - Đơn hàng: ${JSON.stringify(dbOrders)}
 
-NHIỆM VỤ:
-1. CHẨN ĐOÁN LỖI: Nếu dữ liệu kho/menu bị rỗng hoặc bất hợp lý, hãy chỉ rõ lỗi và hướng dẫn khắc phục.
-2. THỰC THI SỬA DỮ LIỆU: Khi nhận khẩu lệnh thay đổi, xuất khối JSON ở cuối:
+1. Nếu hỏi thông tin: Trả lời ngắn gọn, chuẩn xác số liệu bằng tiếng Việt.
+2. Nếu yêu cầu thay đổi dữ liệu, BẮT BUỘC trả về JSON hành động ở cuối câu:
 :::ACTION
 {
   "type": "UPDATE_PRICE" | "TOGGLE_MENU" | "IMPORT_STOCK" | "UPDATE_ORDER",
   "payload": { ... }
 }
 :::`;
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b", // Khớp 100% với model đang chọn trong Playground
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: question }
-        ],
-        temperature: 0.2
-      })
-    });
 
-    const resJson = await response.json();
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question }
+          ],
+          temperature: 0.1
+        })
+      });
 
-    if (resJson.error) {
-      throw new Error(resJson.error.message || "Lỗi máy chủ AI");
+      const resJson = await response.json();
+      if (resJson.error) throw new Error(resJson.error.message || "Lỗi máy chủ AI");
+
+      const fullResponse = resJson.choices?.[0]?.message?.content || "";
+      document.getElementById(loadingId).remove();
+
+      let displayText = fullResponse;
+      let actionData = null;
+
+      if (fullResponse.includes(":::ACTION")) {
+        const parts = fullResponse.split(":::ACTION");
+        displayText = parts[0].trim();
+        const actionRaw = parts[1].replace(/:::/g, "").trim();
+        try { actionData = JSON.parse(actionRaw); } catch (e) {}
+      }
+
+      msgContainer.innerHTML += `<div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 leading-relaxed whitespace-pre-wrap">${displayText}</div>`;
+
+      if (actionData) {
+        await executeAiAction(actionData, msgContainer);
+      }
+    } catch (err) {
+      document.getElementById(loadingId).remove();
+      msgContainer.innerHTML += `<div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">⚠️ Lỗi: ${err.message}</div>`;
     }
 
-    const replyText = resJson.choices?.[0]?.message?.content || "Không có dữ liệu phản hồi.";
-    document.getElementById(loadingId).remove();
-    msgContainer.innerHTML += `
-      <div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 leading-relaxed whitespace-pre-wrap">${replyText}</div>`;
-  } catch (err) {
-    document.getElementById(loadingId).remove();
-    msgContainer.innerHTML += `
-      <div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">⚠️ Lỗi: ${err.message}</div>`;
+    btnSend.disabled = false;
+    msgContainer.scrollTop = msgContainer.scrollHeight;
   }
 
-  btnSend.disabled = false;
-  msgContainer.scrollTop = msgContainer.scrollHeight;
-}
-// Hàm mở form nhập thêm hàng
-async function promptNewStock() {
-  const name = prompt("Nhập mã nguyên liệu cần thêm (VD: robusta_g, sua_dac_g, duong_g):");
-  if (!name) return;
-  const qty = prompt(`Số lượng ${name} nhập thêm:`);
-  if (!qty || isNaN(qty)) return;
-  const cost = prompt("Tổng tiền hóa đơn lô này (đ):");
-  if (!cost || isNaN(cost)) return;
-
-  try {
-    const { error } = await supabaseClient.from('import_logs').insert([{
-      ingredient_name: name.trim().toLowerCase(),
-      added_qty: Number(qty),
-      total_price: Number(cost)
-    }]);
-
-    if (error) throw error;
-    alert(`✅ Đã nhập thành công ${qty} vào kho! Hệ thống đã tự cập nhật giá vốn bình quân.`);
-    loadAdminData();
-  } catch (err) {
-    alert("Lỗi nhập kho: " + err.message);
+  async function executeAiAction(action, msgContainer) {
+    try {
+      if (action.type === "UPDATE_PRICE") {
+        await supabaseClient.from('menu').update({ price: Number(action.payload.price) }).eq('id', action.payload.id);
+        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã đổi giá món #${action.payload.id} thành ${Number(action.payload.price).toLocaleString('vi-VN')}đ</div>`;
+      } else if (action.type === "TOGGLE_MENU") {
+        await supabaseClient.from('menu').update({ status: action.payload.status }).eq('id', action.payload.id);
+        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã đổi trạng thái món #${action.payload.id} sang [${action.payload.status}]</div>`;
+      } else if (action.type === "IMPORT_STOCK") {
+        await supabaseClient.from('import_logs').insert([{
+          ingredient_name: action.payload.ingredient_name,
+          added_qty: Number(action.payload.added_qty),
+          total_price: Number(action.payload.total_price)
+        }]);
+        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã nhập thêm ${action.payload.added_qty} vào kho ${action.payload.ingredient_name}</div>`;
+      } else if (action.type === "UPDATE_ORDER") {
+        await supabaseClient.from('orders').update({ status: action.payload.status }).eq('id', action.payload.id);
+        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã đổi trạng thái đơn #${action.payload.id} sang [${action.payload.status}]</div>`;
+      }
+      await loadAdminData();
+    } catch (err) {
+      msgContainer.innerHTML += `<div class="bg-red-50 border border-red-300 text-red-700 p-2 rounded-xl text-[11px]">❌ Lỗi Action: ${err.message}</div>`;
+    }
   }
-}
-    loadMenu();
-  </script>
+
+  // Kích hoạt nạp thực đơn ngay khi tải xong script
+  loadMenu();
+</script>
 </body>
 </html>
