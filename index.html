@@ -209,12 +209,12 @@
   <!-- JAVASCRIPT ĐIỀU HÀNH -->
 <script>
   // ==========================================
-  // CẤU HÌNH HỆ THỐNG & KHÓA KẾT NỐI
+  // 1. CẤU HÌNH HỆ THỐNG & KHÓA KẾT NỐI
   // ==========================================
   const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
   const GROQ_API_KEY = "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";
-  const VALID_PINS = ["536125"];
+  const VALID_PINS = ["536125"]; // Duy nhất mã PIN 536125
 
   const BANK_CONFIG = {
     id: "VPBank",
@@ -230,7 +230,7 @@
   let cart = {};
 
   // ==========================================
-  // KHÁCH HÀNG: XEM MENU & ĐẶT CÀ PHÊ
+  // 2. KHÁCH HÀNG: THỰC ĐƠN & ĐẶT MÓN
   // ==========================================
   async function loadMenu() {
     const listEl = document.getElementById("menuList");
@@ -257,7 +257,7 @@
     const listEl = document.getElementById("menuList");
     if (!listEl) return;
     if (dbMenu.length === 0) {
-      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-4">Chưa có món nào được bật.</p>`;
+      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-4">Chưa có món nào được kích hoạt.</p>`;
       return;
     }
     listEl.innerHTML = dbMenu.map(item => `
@@ -266,7 +266,7 @@
         <div class="flex-grow">
           <h4 class="font-bold text-sm text-stone-900 leading-tight">${item.name}</h4>
           <p class="text-[11px] text-stone-400">${item.desc || ''}</p>
-          <p class="font-bold text-xs text-[#2B170E] mt-0.5">${item.price.toLocaleString('vi-VN')}đ</p>
+          <p class="font-bold text-xs text-[#2B170E] mt-0.5">${Number(item.price).toLocaleString('vi-VN')}đ</p>
         </div>
         ${item.status === 'BẬT' ? `
           <div class="flex items-center gap-2 bg-stone-100 rounded-xl p-1">
@@ -368,27 +368,14 @@
   }
 
   // ==========================================
-  // KHỐI QUẢN TRỊ ADMIN & POPUP PIN
+  // 3. QUẢN TRỊ ADMIN (MÃ PIN 536125)
   // ==========================================
-  // Chỉ chấp nhận mã PIN cá nhân của bạn
-  const VALID_PINS = ["536125"];
-
   function openPinModal() {
     const modal = document.getElementById("pinModal");
     if (modal) {
       modal.classList.remove("hidden");
       const input = document.getElementById("pinInput");
-      if (input) {
-        input.value = "";
-        setTimeout(() => input.focus(), 100);
-      }
-    } else {
-      const pin = prompt("Nhập mã PIN Quản trị:");
-      if (VALID_PINS.includes(pin?.trim())) {
-        openAdminDirectly();
-      } else if (pin) {
-        alert("❌ Mã PIN không chính xác!");
-      }
+      if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
     }
   }
 
@@ -402,18 +389,23 @@
     const pin = document.getElementById("pinInput")?.value.trim();
     if (VALID_PINS.includes(pin)) {
       closePinModal();
-      openAdminDirectly();
+      document.getElementById("customerView")?.classList.add("hidden");
+      const bottomBar = document.querySelector(".fixed.bottom-0") || document.getElementById("bottomBar");
+      if (bottomBar) bottomBar.classList.add("hidden");
+
+      document.getElementById("adminView")?.classList.remove("hidden");
+      loadAdminData();
     } else {
       alert("❌ Mã PIN không chính xác!");
       const input = document.getElementById("pinInput");
       if (input) { input.value = ""; input.focus(); }
     }
   }
+
   function exitAdminView() {
     document.getElementById("adminView")?.classList.add("hidden");
     document.getElementById("customerView")?.classList.remove("hidden");
-    document.querySelector("footer")?.classList.remove("hidden");
-    const bottomBar = document.querySelector(".fixed.bottom-0");
+    const bottomBar = document.querySelector(".fixed.bottom-0") || document.getElementById("bottomBar");
     if (bottomBar) bottomBar.classList.remove("hidden");
   }
 
@@ -441,7 +433,6 @@
     const activeOrders = dbOrders.filter(o => o.status !== 'ĐÃ HỦY');
     const revenue = activeOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
     
-    // Tính tổng giá vốn (COGS)
     let totalCost = 0;
     activeOrders.forEach(ord => {
       if (Array.isArray(ord.items)) {
@@ -541,7 +532,7 @@
       <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
         <div>
           <p class="font-bold text-stone-800">${m.name}</p>
-          <p class="text-stone-500">Giá: <b>${m.price.toLocaleString('vi-VN')}đ</b></p>
+          <p class="text-stone-500">Giá: <b>${Number(m.price).toLocaleString('vi-VN')}đ</b></p>
         </div>
         <button type="button" onclick="toggleMenuItem(${m.id}, '${m.status}')" class="px-3 py-1 rounded-xl font-bold ${m.status === 'BẬT' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
           ${m.status}
@@ -593,7 +584,7 @@
   }
 
   // ==========================================
-  // TRỢ LÝ AI (GROQ - TỰ SỬA DỮ LIỆU)
+  // 4. TRỢ LÝ AI (GROQ - TỰ SỬA DỮ LIỆU)
   // ==========================================
   function openAiChatModal() {
     document.getElementById("aiChatModal")?.classList.remove("hidden");
@@ -615,7 +606,7 @@
     msgContainer.scrollTop = msgContainer.scrollHeight;
 
     const loadingId = "load_" + Date.now();
-    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý dữ liệu...</div>`;
+    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý...</div>`;
     btnSend.disabled = true;
 
     try {
