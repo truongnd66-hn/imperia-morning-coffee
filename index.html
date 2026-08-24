@@ -564,14 +564,21 @@ async function sendAiMessage() {
 
   try {
     const contextData = { menu: dbMenu, inventory: dbInventory, orders: dbOrders };
-    const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
-Dữ liệu thực tế từ Supabase:
+ const systemPrompt = `Bạn là Trợ lý Kỹ thuật kiêm Vận hành cấp cao của quán Cà Phê Treo Cửa.
+Dữ liệu Supabase hiện tại:
 - Menu: ${JSON.stringify(dbMenu)}
 - Tồn kho: ${JSON.stringify(dbInventory)}
 - Đơn hàng: ${JSON.stringify(dbOrders)}
 
-Nhiệm vụ: Trả lời ngắn gọn, thẳng thắn, chính xác số liệu dựa trên dữ liệu trên bằng tiếng Việt.`;
-
+NHIỆM VỤ:
+1. CHẨN ĐOÁN LỖI: Nếu dữ liệu kho/menu bị rỗng hoặc bất hợp lý, hãy chỉ rõ lỗi và hướng dẫn khắc phục.
+2. THỰC THI SỬA DỮ LIỆU: Khi nhận khẩu lệnh thay đổi, xuất khối JSON ở cuối:
+:::ACTION
+{
+  "type": "UPDATE_PRICE" | "TOGGLE_MENU" | "IMPORT_STOCK" | "UPDATE_ORDER",
+  "payload": { ... }
+}
+:::`;
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
