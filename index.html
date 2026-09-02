@@ -336,6 +336,33 @@
     btn.innerText = "Đang ghi nhận đơn...";
     btn.disabled = true;
 
+    const TELEGRAM_TOKEN = "8965855912:AAHlfVanXQF3km4JOcgnZq-DaaFZYBBRQc0";
+  const TELEGRAM_CHAT_ID = "6512528880"; // Điền ID lấy từ @userinfobot
+
+  async function sendTelegramAlert(orderData) {
+    const text = `☕ <b>CÓ ĐƠN CÀ PHÊ MỚI!</b>
+━━━━━━━━━━━━━━━
+📍 <b>Phòng:</b> ${orderData.room}
+⏰ <b>Hẹn treo:</b> ${orderData.time}
+👤 <b>Khách:</b> ${orderData.name} - ${orderData.phone}
+🧾 <b>Món:</b> ${orderData.items}
+💰 <b>Tổng tiền:</b> ${orderData.total.toLocaleString('vi-VN')}đ
+📝 <b>Ghi chú:</b> ${orderData.note || 'Không'}`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: text,
+          parse_mode: "HTML"
+        })
+      });
+    } catch (e) {
+      console.error("Lỗi gửi Telegram:", e);
+    }
+  }
     const room = document.getElementById("roomInput").value.trim();
     const name = document.getElementById("nameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
@@ -357,6 +384,16 @@
         note: note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
       }]);
       if (error) throw error;
+      // Gửi thông báo Telegram tức thì về điện thoại
+  sendTelegramAlert({
+    room: room,
+    time: deliveryTime,
+    name: name,
+    phone: phone,
+    items: formatOrderItems(orderItems),
+    total: total,
+    note: note
+  });
       alert(`🎉 Đặt đơn thành công! Quán sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
       location.reload();
     } catch (err) {
