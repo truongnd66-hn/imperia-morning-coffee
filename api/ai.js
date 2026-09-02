@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     }
 
     // 2. Lấy API Key từ Vercel
+    const targetModel = (process.env.GROQ_MODEL || "llama3-8b-8192").trim();
     const apiKey = (process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) {
       return res.status(500).json({ error: 'Chưa cấu hình GROQ_API_KEY trên Vercel!' });
@@ -77,4 +78,3 @@ Quy tắc:
     return res.status(500).json({ error: `Lỗi Serverless: ${err.message}` });
   }
 }
-const targetModel = (process.env.GROQ_MODEL || "llama3-8b-8192").trim();
