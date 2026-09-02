@@ -642,26 +642,13 @@
     msgContainer.scrollTop = msgContainer.scrollHeight;
 
     const loadingId = "load_" + Date.now();
-    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý...</div>`;
+    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý dữ liệu...</div>`;
     btnSend.disabled = true;
 
     try {
-      const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
-Dữ liệu Supabase hiện tại:
-- Menu: ${JSON.stringify(dbMenu)}
-- Tồn kho: ${JSON.stringify(dbInventory)}
-- Đơn hàng: ${JSON.stringify(dbOrders)}
-
-1. Nếu hỏi thông tin: Trả lời ngắn gọn, thẳng thắn bằng tiếng Việt.
-2. Nếu yêu cầu thay đổi dữ liệu, BẮT BUỘC xuất kèm khối JSON hành động ở cuối câu trả lời theo mẫu:
-:::ACTION
-{
-  "type": "UPDATE_PRICE" | "TOGGLE_MENU" | "IMPORT_STOCK" | "UPDATE_ORDER",
-  "payload": { ... }
-}
-:::`;
-
-// Gọi qua backend nội bộ trên Vercel - Khóa API được bảo mật 100%
+      const currentPin = document.getElementById("pinInput")?.value.trim() || "536125";
+      
+      // ĐIỂM KHÁC BIỆT: Gọi về backend /api/ai thay vì gọi thẳng ra ngoài Groq
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -670,14 +657,12 @@ Dữ liệu Supabase hiện tại:
           menu: dbMenu,
           inventory: dbInventory,
           orders: dbOrders,
-          pin: "536125"
+          pin: currentPin // Gửi PIN lên cho Serverless kiểm tra
         })
       });
 
       const resJson = await response.json();
       if (resJson.error) throw new Error(resJson.error.message || resJson.error);
-      const resJson = await response.json();
-      if (resJson.error) throw new Error(resJson.error.message || "Lỗi máy chủ AI");
 
       const fullResponse = resJson.choices?.[0]?.message?.content || "";
       document.getElementById(loadingId).remove();
