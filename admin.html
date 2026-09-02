@@ -288,6 +288,9 @@
     function openAiChat() { document.getElementById("aiModal").classList.remove("hidden"); }
     function closeAiChat() { document.getElementById("aiModal").classList.add("hidden"); }
 
+// ==========================================
+    // KHỐI AI TRỢ LÝ THỰC THI HÀNH ĐỘNG SUPABASE
+    // ==========================================
     async function sendAiQuery() {
       const input = document.getElementById("aiInput");
       const box = document.getElementById("aiChatBox");
@@ -300,7 +303,7 @@
       box.scrollTop = box.scrollHeight;
 
       const loadId = "load_" + Date.now();
-      box.innerHTML += `<div id="${loadId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang phân tích dữ liệu...</div>`;
+      box.innerHTML += `<div id="${loadId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang phân tích và xử lý...</div>`;
       btn.disabled = true;
 
       try {
@@ -309,15 +312,82 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: query, menu: dbMenu, inventory: dbInventory, orders: dbOrders, pin: "536125" })
         });
+        
         const data = await res.json();
-        document.getElementById(loadId).remove();
-        box.innerHTML += `<div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 whitespace-pre-wrap">${data.choices?.[0]?.message?.content || "Không có phản hồi."}</div>`;
+        document.getElementById(loadId)?.remove();
+
+        if (data.error) {
+          box.innerHTML += `<div class="bg-red-100 text-red-700 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-red-200">⚠️ Lỗi hệ thống: ${data.error}</div>`;
+          btn.disabled = false;
+          return;
+        }
+
+        const fullResponse = data.choices?.[0]?.message?.content || "Không nhận được phản hồi từ AI.";
+        let displayText = fullResponse;
+        let actionData = null;
+
+        if (fullResponse.includes(":::ACTION")) {
+          const parts = fullResponse.split(":::ACTION");
+          displayText = parts[0].trim();
+          try {
+            const raw = parts[1].replace(/:::/g, "").trim();
+            actionData = JSON.parse(raw);
+          } catch (e) {
+            console.error("Lỗi parse JSON Action:", e);
+          }
+        }
+
+        box.innerHTML += `<div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 whitespace-pre-wrap">${displayText}</div>`;
+
+        // Nếu AI phát lệnh can thiệp Database
+        if (actionData) {
+          await executeAiAction(actionData, box);
+        }
+
       } catch (err) {
-        document.getElementById(loadId).remove();
-        box.innerHTML += `<div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">Lỗi: ${err.message}</div>`;
+        document.getElementById(loadId)?.remove();
+        box.innerHTML += `<div class="bg-red-100 text-red-700 p-3 rounded-2xl text-[11px]">⚠️ Lỗi kết nối: ${err.message}</div>`;
       }
+
       btn.disabled = false;
       box.scrollTop = box.scrollHeight;
+    }
+
+    async function executeAiAction(action, box) {
+      try {
+        if (action.type === "ADD_MENU_ITEM") {
+          const { error } = await supabaseClient.from('menu').insert([{
+            name: action.payload.name,
+            price: Number(action.payload.price) || 25000,
+            desc: action.payload.desc || "Món mới cập nhật",
+            status: "BẬT",
+            img: action.payload.img || "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=200"
+          }]);
+          if (error) throw error;
+          box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã thêm thành công món [${action.payload.name}] vào thực đơn!</div>`;
+        } 
+        else if (action.type === "UPDATE_PRICE") {
+          const { error } = await supabaseClient.from('menu').update({ price: Number(action.payload.price) }).eq('id', action.payload.id);
+          if (error) throw error;
+          box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã đổi giá món #${action.payload.id} thành ${Number(action.payload.price).toLocaleString('vi-VN')}đ!</div>`;
+        } 
+        else if (action.type === "TOGGLE_MENU") {
+          const { error } = await supabaseClient.from('menu').update({ status: action.payload.status }).eq('id', action.payload.id);
+          if (error) throw error;
+          box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã đổi trạng thái món #${action.payload.id} sang [${action.payload.status}]!</div>`;
+        } 
+        else if (action.type === "UPDATE_ORDER") {
+          const { error } = await supabaseClient.from('orders').update({ status: action.payload.status }).eq('id', action.payload.id);
+          if (error) throw error;
+          box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã duyệt đơn #${action.payload.id} sang [${action.payload.status}]!</div>`;
+        }
+
+        // Tự động load lại bảng điều khiển để số liệu cập nhật tức thì
+        await loadAdminData();
+
+      } catch (e) {
+        box.innerHTML += `<div class="bg-red-50 text-red-600 p-2 rounded-xl text-[11px]">❌ Lỗi thực thi Database: ${e.message}</div>`;
+      }
     }
   </script>
 </body>
