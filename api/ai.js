@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Luôn trả về định dạng JSON
   res.setHeader('Content-Type', 'application/json');
 
   if (req.method !== 'POST') {
@@ -9,7 +8,7 @@ export default async function handler(req, res) {
   try {
     const { question, menu, inventory, orders, pin } = req.body || {};
 
-    // 1. Kiểm tra PIN
+    // 1. Kiểm tra mã PIN
     const validPin = process.env.ADMIN_PIN || "536125";
     if (String(pin).trim() !== String(validPin).trim()) {
       return res.status(401).json({ error: 'Mã PIN quản trị không hợp lệ' });
@@ -18,19 +17,19 @@ export default async function handler(req, res) {
     // 2. Kiểm tra GROQ_API_KEY
     const apiKey = (process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) {
-      return res.status(500).json({ error: 'Chưa cài đặt GROQ_API_KEY trong Vercel Environment Variables!' });
+      return res.status(500).json({ error: 'Chưa cài đặt GROQ_API_KEY trên Vercel!' });
     }
 
     const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
 Dữ liệu hiện tại:
 - Menu: ${JSON.stringify(menu || [])}
 - Kho: ${JSON.stringify(inventory || [])}
-- Đơn: ${JSON.stringify(orders || [])}
+- Đơn hàng: ${JSON.stringify(orders || [])}
 
 Quy tắc:
-1. Trả lời ngắn gọn, trực tiếp bằng tiếng Việt.
+1. Trả lời ngắn gọn, thẳng thắn bằng tiếng Việt.
 2. Nếu người dùng muốn THÊM MÓN, ĐỔI GIÁ, TẮT MÓN, DUYỆT ĐƠN, bắt buộc xuất kèm khối :::ACTION ở cuối:
-- Thêm món:
+- Thêm món mới:
 :::ACTION
 {"type": "ADD_MENU_ITEM", "payload": {"name": "Tên món", "price": 25000, "desc": "Mô tả", "img": ""}}
 :::
@@ -39,7 +38,9 @@ Quy tắc:
 {"type": "UPDATE_PRICE", "payload": {"id": 1, "price": 25000}}
 :::`;
 
-    // Gọi Groq với model Llama 3.3 70B hoặc Llama 3.1 8B bằng chuỗi ASCII sạch
+    // Giải mã trực tiếp từ Base64: Chuỗi này đảm bảo 100% là "llama-3.1-8b-instant" với 3 dấu gạch nối chuẩn ASCII 45
+    const modelName = Buffer.from("bGxhbWEtMy4xLThiLWluc3RhbnQ=", "base64").toString("ascii");
+
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -47,7 +48,7 @@ Quy tắc:
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: modelName,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question }
