@@ -46,7 +46,24 @@ Quy tắc:
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+       // Tự động triệt tiêu mọi loại dấu gạch dài lạ về dấu gạch nối chuẩn ASCII
+    const targetModel = "llama-3.1-8b-instant".replace(/[\u2010-\u2015]/g, "-");
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: targetModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: question }
+        ],
+        temperature: 0.1
+      })
+    });
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question }
