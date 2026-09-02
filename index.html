@@ -6,187 +6,89 @@
   <title>Cà Phê Treo Cửa - Imperia Sky Garden</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { -webkit-tap-highlight-color: transparent; font-family: system-ui, -apple-system, sans-serif; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FBF9F5; }
   </style>
 </head>
-<body class="bg-stone-100 text-stone-800 antialiased min-h-screen pb-28">
+<body class="text-stone-800 antialiased pb-28">
 
-  <!-- HEADER -->
+  <!-- HEADER KHÁCH HÀNG (ĐÃ BỎ Ổ KHÓA ADMIN) -->
   <header class="bg-[#2B170E] text-amber-50 p-4 sticky top-0 z-30 shadow-md flex items-center justify-between border-b border-amber-900/40">
-    <div class="flex items-center gap-2">
-      <div class="w-9 h-9 bg-amber-900/60 rounded-full flex items-center justify-center text-lg border border-amber-600/30">☕</div>
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-amber-900/60 rounded-full flex items-center justify-center text-xl border border-amber-600/30">☕</div>
       <div>
         <h1 class="text-sm font-black tracking-wide uppercase text-amber-100">Cà Phê Treo Cửa</h1>
         <p class="text-[11px] text-amber-300/80">Imperia Sky Garden • 06:45 – 07:45</p>
       </div>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-semibold">Đang nhận đơn</span>
-      <button type="button" onclick="openPinModal()" class="text-amber-200 hover:text-white text-base p-2 bg-amber-900/50 rounded-xl transition">🔒</button>
-    </div>
+    <span class="text-[10px] px-2.5 py-1 rounded-full bg-emerald-600 text-white font-bold tracking-wide">Đang nhận đơn</span>
   </header>
 
-  <!-- GIAO DIỆN KHÁCH HÀNG -->
-  <main id="customerView" class="max-w-md mx-auto p-4 space-y-4">
-    <div class="bg-amber-900/10 border border-amber-900/20 rounded-xl p-3 flex items-center gap-2 text-xs text-amber-950">
-      <span>⚡</span>
+  <!-- NỘI DUNG ĐẶT MÓN -->
+  <main class="max-w-md mx-auto p-4 space-y-4">
+    <div class="bg-amber-900/10 border border-amber-900/20 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-amber-950">
+      <span class="text-base">⚡</span>
       <p>Pha phin mộc nguyên chất • Đặt trước <b>22:00</b> tối nay để treo cửa đúng hẹn sáng mai.</p>
     </div>
 
     <section>
-      <h2 class="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Thực đơn hôm nay</h2>
-      <div id="menuList" class="space-y-3">
+      <h2 class="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2.5">Thực đơn sáng mai</h2>
+      <div id="menuList" class="space-y-2.5">
         <p class="text-xs text-stone-400 text-center py-6">Đang tải thực đơn...</p>
       </div>
     </section>
 
-    <section class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm space-y-3">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-stone-500">Thông tin nhận cà phê</h2>
+    <section class="bg-white p-4 rounded-3xl border border-stone-200 shadow-sm space-y-3">
+      <h3 class="font-bold text-xs uppercase tracking-wider text-stone-700">Thông tin nhận cà phê</h3>
+      
       <div>
-        <label class="block text-xs font-semibold text-stone-700 mb-1">Số phòng chung cư *</label>
-        <input type="text" id="roomInput" placeholder="Ví dụ: A2805, B12A08, C0712" 
-               class="w-full px-3 py-2.5 border border-stone-300 rounded-xl uppercase text-sm font-bold focus:ring-2 focus:ring-amber-900 outline-none"
-               oninput="this.value = this.value.toUpperCase(); checkFormValid();">
+        <label class="text-[11px] font-bold text-stone-500">Số căn hộ chung cư *</label>
+        <input type="text" id="roomInput" placeholder="Ví dụ: A2805, B12A08, C0712" oninput="checkFormValid()"
+               class="w-full mt-1 border border-stone-300 rounded-xl p-2.5 text-xs outline-none focus:border-amber-900 uppercase font-semibold">
       </div>
+
       <div class="grid grid-cols-2 gap-2">
         <div>
-          <label class="block text-xs font-medium text-stone-600 mb-1">Tên của bạn *</label>
-          <input type="text" id="nameInput" placeholder="Tên khách" class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm outline-none" oninput="checkFormValid()">
+          <label class="text-[11px] font-bold text-stone-500">Tên của bạn *</label>
+          <input type="text" id="nameInput" placeholder="Tên khách" oninput="checkFormValid()"
+                 class="w-full mt-1 border border-stone-300 rounded-xl p-2.5 text-xs outline-none focus:border-amber-900 font-semibold">
         </div>
         <div>
-          <label class="block text-xs font-medium text-stone-600 mb-1">Số điện thoại *</label>
-          <input type="tel" id="phoneInput" placeholder="09xxxxxxxx" class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm outline-none" oninput="checkFormValid()">
+          <label class="text-[11px] font-bold text-stone-500">Số điện thoại *</label>
+          <input type="tel" id="phoneInput" placeholder="09xxxxxxxx" oninput="checkFormValid()"
+                 class="w-full mt-1 border border-stone-300 rounded-xl p-2.5 text-xs outline-none focus:border-amber-900 font-semibold">
         </div>
       </div>
-<!-- CHỌN KHUNG GIỜ GIAO -->
+
       <div>
-        <label class="block text-xs font-semibold text-stone-700 mb-1">Khung giờ treo cửa sáng mai *</label>
-        <select id="timeSlotInput" class="w-full px-3 py-2.5 border border-stone-300 rounded-xl text-sm font-bold text-stone-800 bg-stone-50 outline-none focus:ring-2 focus:ring-amber-900" onchange="checkFormValid()">
-          <option value="06:45 - 07:05" selected>🌅 06:45 – 07:05 (Đi làm sớm)</option>
-          <option value="07:05 - 07:25">⚡ 07:05 – 07:25 (Khung giờ phổ biến)</option>
-          <option value="07:25 - 07:45">☕ 07:25 – 07:45 (Thư thả / Đi làm muộn)</option>
+        <label class="text-[11px] font-bold text-stone-500">Khung giờ treo cửa sáng mai *</label>
+        <select id="timeSlotInput" class="w-full mt-1 border border-stone-300 rounded-xl p-2.5 text-xs outline-none focus:border-amber-900 font-semibold bg-white">
+          <option value="06:45 – 07:05">🌅 06:45 – 07:05 (Đi làm sớm)</option>
+          <option value="07:05 – 07:25">⏰ 07:05 – 07:25 (Giờ phổ biến)</option>
+          <option value="07:25 – 07:45">☀️ 07:25 – 07:45 (Đi làm muộn)</option>
         </select>
       </div>
+
       <div>
-        <label class="block text-xs font-medium text-stone-600 mb-1">Ghi chú khẩu vị</label>
-        <input type="text" id="noteInput" placeholder="Tách đá riêng, ít ngọt, nhiều sữa..." class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm outline-none">
+        <label class="text-[11px] font-bold text-stone-500">Ghi chú khẩu vị</label>
+        <input type="text" id="noteInput" placeholder="Tách đá riêng, ít ngọt, nhiều sữa..."
+               class="w-full mt-1 border border-stone-300 rounded-xl p-2.5 text-xs outline-none focus:border-amber-900">
       </div>
     </section>
-
-    <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 p-3 shadow-lg z-20">
-      <div class="max-w-md mx-auto flex items-center justify-between gap-3">
-        <div>
-          <p class="text-xs text-stone-500">Tổng cộng (<span id="cartCount">0</span> món):</p>
-          <p class="text-lg font-black text-amber-950" id="cartTotal">0đ</p>
-        </div>
-        <button onclick="openPaymentModal()" id="btnSubmitOrder" disabled 
-                class="bg-amber-900 disabled:bg-stone-300 disabled:text-stone-500 text-white font-bold px-6 py-3 rounded-xl text-sm shadow transition-all">
-          Thanh toán VietQR ⚡
-        </button>
-      </div>
-    </div>
   </main>
 
-  <!-- GIAO DIỆN ADMIN -->
-  <div id="adminView" class="max-w-md mx-auto p-4 space-y-4 hidden">
-    <div class="flex items-center justify-between bg-[#2B170E] text-white p-3.5 rounded-2xl shadow">
+  <!-- THANH TỔNG TIỀN DƯỚI ĐÁY -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 p-3.5 z-20">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-3">
       <div>
-        <p class="font-black text-sm">HỆ THỐNG QUẢN TRỊ QUÁN ☕</p>
-        <p class="text-[10px] text-amber-300">Đồng bộ hai chiều với Supabase</p>
+        <p class="text-[10px] text-stone-400 font-bold uppercase">Tổng (<span id="totalCartCount">0</span> món)</p>
+        <p class="text-base font-black text-amber-950" id="totalCartPrice">0đ</p>
       </div>
-      <button onclick="exitAdminView()" class="text-xs bg-amber-900/80 hover:bg-amber-800 px-3 py-1.5 rounded-lg border border-amber-700 font-bold">Thoát Admin</button>
-    </div>
-
-    <!-- KHỐI AI TRONG ADMIN -->
-    <div class="bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-4 rounded-2xl shadow flex items-center justify-between">
-      <div>
-        <h3 class="font-black text-xs flex items-center gap-1.5">✨ Trợ Lý Kinh Doanh AI</h3>
-        <p class="text-[10px] text-purple-200">Phân tích đơn, tính kho & lộ trình</p>
-      </div>
-      <button onclick="openAiChatModal()" class="px-3.5 py-2 bg-white text-purple-950 font-black rounded-xl text-xs shadow hover:bg-purple-50">Hỏi Trợ Lý</button>
-    </div>
-
-    <!-- P&L DASHBOARD -->
-    <div class="grid grid-cols-3 gap-2 text-center">
-      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
-        <p class="text-[10px] text-stone-400 font-bold uppercase">Doanh Thu</p>
-        <p class="text-sm font-black text-amber-950 mt-1" id="dashRevenue">0đ</p>
-      </div>
-      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
-        <p class="text-[10px] text-stone-400 font-bold uppercase">Giá Vốn (COGS)</p>
-        <p class="text-sm font-black text-red-600 mt-1" id="dashCost">0đ</p>
-      </div>
-      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
-        <p class="text-[10px] text-stone-400 font-bold uppercase">Lãi Gộp</p>
-        <p class="text-sm font-black text-emerald-600 mt-1" id="dashProfit">0đ</p>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <div class="grid grid-cols-3 gap-1 bg-stone-200 p-1 rounded-xl text-xs font-bold">
-      <button onclick="switchAdminTab('orders')" id="tabBtnOrders" class="py-2 rounded-lg bg-white shadow text-amber-950">📦 Đơn (<span id="adminOrderCount">0</span>)</button>
-      <button onclick="switchAdminTab('menu')" id="tabBtnMenu" class="py-2 rounded-lg text-stone-600">☕ Món & Giá</button>
-      <button onclick="switchAdminTab('inventory')" id="tabBtnInv" class="py-2 rounded-lg text-stone-600">📊 Kho & Nhập</button>
-    </div>
-
-    <div id="adminOrdersSection" class="space-y-3">
-      <div class="flex justify-between items-center text-xs text-stone-500">
-        <span>Lộ trình: Cụm tòa $\rightarrow$ Tầng cao xuống thấp</span>
-        <button onclick="loadAdminOrders()" class="text-amber-900 font-bold underline">Làm mới ↻</button>
-      </div>
-      <div id="adminOrdersList" class="space-y-2"></div>
-    </div>
-
-    <div id="adminMenuSection" class="space-y-3 hidden">
-      <div id="adminMenuList" class="space-y-2"></div>
-    </div>
-
-    <div id="adminInventorySection" class="space-y-3 hidden">
-      <div class="flex justify-between items-center">
-        <p class="text-xs text-stone-500">Tồn kho nguyên liệu thực tế:</p>
-        <button onclick="promptNewStock()" class="text-xs bg-amber-950 text-white font-bold px-2.5 py-1 rounded-lg">+ Nhập thêm hàng</button>
-      </div>
-      <div id="adminInvList" class="space-y-2"></div>
-    </div>
-  </div>
-
-  <!-- POPUP PIN ADMIN -->
-  <div id="pinModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center space-y-3 shadow-xl">
-      <h3 class="font-bold text-stone-800 text-sm">Mã PIN Quản Trị</h3>
-      <input type="password" id="pinInput" placeholder="Nhập mã PIN quản trị..." class="w-full text-center text-xl font-bold tracking-widest border border-stone-300 py-2.5 rounded-xl outline-none focus:border-amber-900">
-      <div class="flex gap-2">
-        <button type="button" onclick="closePinModal()" class="flex-1 py-2 bg-stone-200 rounded-xl text-xs font-semibold text-stone-600">Hủy</button>
-        <button type="button" onclick="submitPin()" class="flex-1 py-2 bg-amber-900 text-white rounded-xl text-xs font-bold">Xác nhận</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- POPUP TRỢ LÝ AI -->
-  <div id="aiChatModal" class="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="bg-[#2B170E] text-white p-4 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm">🤖</div>
-          <div>
-            <h4 class="font-bold text-xs">Trợ Lý Vận Hành Quán</h4>
-            <p class="text-[10px] text-emerald-400 font-semibold">● Đã kết nối Supabase</p>
-          </div>
-        </div>
-        <button onclick="closeAiChatModal()" class="text-stone-400 hover:text-white text-lg">✕</button>
-      </div>
-      <div id="aiChatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50 text-xs">
-        <div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200">
-          Chào bạn! Tôi đã đồng bộ toàn bộ đơn đặt, thực đơn và kho từ Supabase. Bạn muốn tôi thống kê nguyên liệu cần pha, kiểm tra kho hay tính toán lộ trình giao?
-        </div>
-      </div>
-      <div class="p-3 bg-white border-t flex gap-2">
-        <input type="text" id="aiUserInput" placeholder="Hỏi AI (VD: Sáng mai cần bao nhiêu gam cà phê?)" 
-               class="flex-1 border border-stone-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-purple-600"
-               onkeypress="if(event.key === 'Enter') sendAiMessage()">
-        <button onclick="sendAiMessage()" id="btnSendAi" class="bg-purple-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow">Gửi</button>
-      </div>
+      <button type="button" id="btnCheckout" onclick="openQrModal()" disabled
+              class="px-5 py-3 rounded-2xl font-bold text-xs bg-amber-950 text-white disabled:bg-stone-300 disabled:cursor-not-allowed shadow transition">
+        Thanh toán VietQR ⚡
+      </button>
     </div>
   </div>
 
@@ -206,518 +108,132 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT ĐIỀU HÀNH -->
-<script>
-  // ==========================================
-  // 1. CẤU HÌNH HỆ THỐNG & KHÓA KẾT NỐI
-  // ==========================================
-  const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
-  const VALID_PINS = ["536125"]; // Duy nhất mã PIN 536125
+  <script>
+    const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
+    const BANK_CONFIG = { id: "VPBank", no: "32638888", name: "NGUYEN DUONG TRUONG" };
 
-  const BANK_CONFIG = {
-    id: "VPBank",
-    no: "32638888",
-    name: "NGUYEN DUONG TRUONG"
-  };
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let dbMenu = [];
+    let cart = {};
 
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  let dbMenu = [];
-  let dbInventory = [];
-  let dbOrders = [];
-  let cart = {};
-
-  // ==========================================
-  // 2. KHÁCH HÀNG: THỰC ĐƠN & ĐẶT MÓN
-  // ==========================================
-  async function loadMenu() {
-    const listEl = document.getElementById("menuList");
-    try {
-      const [menuRes, invRes] = await Promise.all([
-        supabaseClient.from('menu').select('*').order('id', { ascending: true }),
-        supabaseClient.from('inventory').select('*')
-      ]);
-
-      if (menuRes.error) throw menuRes.error;
-      if (invRes.error) throw invRes.error;
-
-      dbMenu = menuRes.data || [];
-      dbInventory = invRes.data || [];
-      renderCustomerMenu();
-    } catch (err) {
-      if (listEl) {
-        listEl.innerHTML = `<div class="bg-red-50 text-red-600 p-3 rounded-xl text-xs text-center">⚠️ Lỗi tải dữ liệu: ${err.message}</div>`;
+    async function loadMenu() {
+      try {
+        const { data, error } = await supabaseClient.from('menu').select('*').order('id', { ascending: true });
+        if (error) throw error;
+        dbMenu = data || [];
+        renderCustomerMenu();
+      } catch (err) {
+        document.getElementById("menuList").innerHTML = `<div class="p-3 bg-red-50 text-red-600 rounded-xl text-xs text-center">Lỗi tải menu: ${err.message}</div>`;
       }
     }
-  }
 
-  function renderCustomerMenu() {
-    const listEl = document.getElementById("menuList");
-    if (!listEl) return;
-    if (dbMenu.length === 0) {
-      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-4">Chưa có món nào được kích hoạt.</p>`;
-      return;
-    }
-    listEl.innerHTML = dbMenu.map(item => `
-      <div class="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between gap-3">
-        <img src="${item.img || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200'}" class="w-14 h-14 object-cover rounded-xl border border-stone-100 flex-shrink-0">
-        <div class="flex-grow">
-          <h4 class="font-bold text-sm text-stone-900 leading-tight">${item.name}</h4>
-          <p class="text-[11px] text-stone-400">${item.desc || ''}</p>
-          <p class="font-bold text-xs text-[#2B170E] mt-0.5">${Number(item.price).toLocaleString('vi-VN')}đ</p>
+    function renderCustomerMenu() {
+      const listEl = document.getElementById("menuList");
+      if (!listEl) return;
+      listEl.innerHTML = dbMenu.map(item => `
+        <div class="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between gap-3">
+          <img src="${item.img || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200'}" class="w-14 h-14 object-cover rounded-xl border border-stone-100 flex-shrink-0">
+          <div class="flex-grow">
+            <h4 class="font-bold text-sm text-stone-900 leading-tight">${item.name}</h4>
+            <p class="text-[11px] text-stone-400">${item.desc || ''}</p>
+            <p class="font-bold text-xs text-[#2B170E] mt-0.5">${Number(item.price).toLocaleString('vi-VN')}đ</p>
+          </div>
+          ${item.status === 'BẬT' ? `
+            <div class="flex items-center gap-2 bg-stone-100 rounded-xl p-1">
+              <button type="button" onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-white rounded-lg font-bold text-xs shadow-sm">-</button>
+              <span id="qty_${item.id}" class="font-bold text-xs w-4 text-center">0</span>
+              <button type="button" onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-[#2B170E] text-white rounded-lg font-bold text-xs shadow-sm">+</button>
+            </div>` : `<span class="text-[11px] font-bold text-stone-400 bg-stone-100 px-2 py-1 rounded-lg">Hết món</span>`}
         </div>
-        ${item.status === 'BẬT' ? `
-          <div class="flex items-center gap-2 bg-stone-100 rounded-xl p-1">
-            <button type="button" onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-white rounded-lg font-bold text-xs shadow-sm">-</button>
-            <span id="qty_${item.id}" class="font-bold text-xs w-4 text-center">0</span>
-            <button type="button" onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-[#2B170E] text-white rounded-lg font-bold text-xs shadow-sm">+</button>
-          </div>` : `<span class="text-[11px] font-bold text-stone-400 bg-stone-100 px-2 py-1 rounded-lg">Hết món</span>`}
-      </div>
-    `).join('');
-  }
-
-  function updateCart(id, change) {
-    cart[id] = (cart[id] || 0) + change;
-    if (cart[id] <= 0) delete cart[id];
-    const qtyEl = document.getElementById(`qty_${id}`);
-    if (qtyEl) qtyEl.innerText = cart[id] || 0;
-    calculateTotal();
-    checkFormValid();
-  }
-
-  function calculateTotal() {
-    let total = 0, count = 0;
-    for (let id in cart) {
-      const item = dbMenu.find(m => m.id == id);
-      if (item) {
-        total += item.price * cart[id];
-        count += cart[id];
-      }
-    }
-    const countEl = document.getElementById("totalCartCount");
-    const priceEl = document.getElementById("totalCartPrice");
-    if (countEl) countEl.innerText = count;
-    if (priceEl) priceEl.innerText = total.toLocaleString('vi-VN') + "đ";
-  }
-
-  function checkFormValid() {
-    const room = document.getElementById("roomInput")?.value.trim();
-    const name = document.getElementById("nameInput")?.value.trim();
-    const phone = document.getElementById("phoneInput")?.value.trim();
-    const hasItems = Object.keys(cart).length > 0;
-    const btn = document.getElementById("btnCheckout");
-    if (btn) btn.disabled = !(room && name && phone && hasItems);
-  }
-
-  function openQrModal() {
-    const room = document.getElementById("roomInput").value.trim();
-    const timeSlot = document.getElementById("timeSlotInput").value;
-    let total = 0;
-    for (let id in cart) {
-      const item = dbMenu.find(m => m.id == id);
-      if (item) total += item.price * cart[id];
-    }
-    const memo = `CF ${room.replace(/\s+/g, '')}`;
-    const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.no}-compact.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
-    
-    document.getElementById("vietQrImg").src = qrUrl;
-    document.getElementById("qrTotalText").innerText = total.toLocaleString('vi-VN') + "đ";
-    document.getElementById("qrRoomText").innerText = `${room} (${timeSlot})`;
-    document.getElementById("qrModal").classList.remove("hidden");
-  }
-
-  function closePaymentModal() {
-    document.getElementById("qrModal")?.classList.add("hidden");
-  }
-
-  async function confirmOrderSuccess() {
-    const btn = document.getElementById("btnConfirmPaid");
-    btn.innerText = "Đang ghi nhận đơn...";
-    btn.disabled = true;
-
-    const TELEGRAM_TOKEN = "8965855912:AAHlfVanXQF3km4JOcgnZq-DaaFZYBBRQc0";
-  const TELEGRAM_CHAT_ID = "6512528880"; // Điền ID lấy từ @userinfobot
-
-  async function sendTelegramAlert(orderData) {
-    const text = `☕ <b>CÓ ĐƠN CÀ PHÊ MỚI!</b>
-━━━━━━━━━━━━━━━
-📍 <b>Phòng:</b> ${orderData.room}
-⏰ <b>Hẹn treo:</b> ${orderData.time}
-👤 <b>Khách:</b> ${orderData.name} - ${orderData.phone}
-🧾 <b>Món:</b> ${orderData.items}
-💰 <b>Tổng tiền:</b> ${orderData.total.toLocaleString('vi-VN')}đ
-📝 <b>Ghi chú:</b> ${orderData.note || 'Không'}`;
-
-    try {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: text,
-          parse_mode: "HTML"
-        })
-      });
-    } catch (e) {
-      console.error("Lỗi gửi Telegram:", e);
-    }
-  }
-    const room = document.getElementById("roomInput").value.trim();
-    const name = document.getElementById("nameInput").value.trim();
-    const phone = document.getElementById("phoneInput").value.trim();
-    const deliveryTime = document.getElementById("timeSlotInput").value;
-    const note = document.getElementById("noteInput").value.trim();
-
-    let total = 0, orderItems = [];
-    for (let id in cart) {
-      const item = dbMenu.find(m => m.id == id);
-      if (item) {
-        total += item.price * cart[id];
-        orderItems.push({ id: item.id, qty: cart[id] });
-      }
+      `).join('');
     }
 
-    try {
-      const { error } = await supabaseClient.from('orders').insert([{
-        room: room, name: name, phone: phone, delivery_time: deliveryTime,
-        note: note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
-      }]);
-      if (error) throw error;
-      // Gửi thông báo Telegram tức thì về điện thoại
-  sendTelegramAlert({
-    room: room,
-    time: deliveryTime,
-    name: name,
-    phone: phone,
-    items: formatOrderItems(orderItems),
-    total: total,
-    note: note
-  });
-      alert(`🎉 Đặt đơn thành công! Quán sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
-      location.reload();
-    } catch (err) {
-      alert("Lỗi: " + err.message);
-      btn.innerText = "Tôi đã chuyển khoản xong ✅";
-      btn.disabled = false;
+    function updateCart(id, change) {
+      cart[id] = (cart[id] || 0) + change;
+      if (cart[id] <= 0) delete cart[id];
+      const qtyEl = document.getElementById(`qty_${id}`);
+      if (qtyEl) qtyEl.innerText = cart[id] || 0;
+      calculateTotal();
+      checkFormValid();
     }
-  }
 
-  // ==========================================
-  // 3. QUẢN TRỊ ADMIN (MÃ PIN 536125)
-  // ==========================================
-  function openPinModal() {
-    const modal = document.getElementById("pinModal");
-    if (modal) {
-      modal.classList.remove("hidden");
-      const input = document.getElementById("pinInput");
-      if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
-    }
-  }
-
-  window.promptAdmin = openPinModal;
-
-  function closePinModal() {
-    document.getElementById("pinModal")?.classList.add("hidden");
-  }
-
-  function submitPin() {
-    const pin = document.getElementById("pinInput")?.value.trim();
-    if (VALID_PINS.includes(pin)) {
-      closePinModal();
-      document.getElementById("customerView")?.classList.add("hidden");
-      const bottomBar = document.querySelector(".fixed.bottom-0") || document.getElementById("bottomBar");
-      if (bottomBar) bottomBar.classList.add("hidden");
-
-      document.getElementById("adminView")?.classList.remove("hidden");
-      loadAdminData();
-    } else {
-      alert("❌ Mã PIN không chính xác!");
-      const input = document.getElementById("pinInput");
-      if (input) { input.value = ""; input.focus(); }
-    }
-  }
-
-  function exitAdminView() {
-    document.getElementById("adminView")?.classList.add("hidden");
-    document.getElementById("customerView")?.classList.remove("hidden");
-    const bottomBar = document.querySelector(".fixed.bottom-0") || document.getElementById("bottomBar");
-    if (bottomBar) bottomBar.classList.remove("hidden");
-  }
-
-  async function loadAdminData() {
-    try {
-      const [oRes, mRes, iRes] = await Promise.all([
-        supabaseClient.from('orders').select('*').order('id', { ascending: false }),
-        supabaseClient.from('menu').select('*').order('id', { ascending: true }),
-        supabaseClient.from('inventory').select('*').order('id', { ascending: true })
-      ]);
-      dbOrders = oRes.data || [];
-      dbMenu = mRes.data || [];
-      dbInventory = iRes.data || [];
-
-      calculateAdminFinancials();
-      loadAdminOrders();
-      renderAdminMenu();
-      renderAdminInventory();
-    } catch (err) {
-      console.error("Lỗi tải Admin:", err);
-    }
-  }
-
-  function calculateAdminFinancials() {
-    const activeOrders = dbOrders.filter(o => o.status !== 'ĐÃ HỦY');
-    const revenue = activeOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
-    
-    let totalCost = 0;
-    activeOrders.forEach(ord => {
-      if (Array.isArray(ord.items)) {
-        ord.items.forEach(it => {
-          const menuItem = dbMenu.find(m => m.id == it.id);
-          if (menuItem && menuItem.bom) {
-            for (let ing in menuItem.bom) {
-              const invItem = dbInventory.find(i => i.name === ing);
-              if (invItem) {
-                totalCost += (Number(menuItem.bom[ing]) * Number(invItem.cost_per_unit || 0)) * it.qty;
-              }
-            }
-          }
-        });
-      }
-    });
-
-    const profit = revenue - totalCost;
-
-    if (document.getElementById("dashRevenue")) document.getElementById("dashRevenue").innerText = revenue.toLocaleString('vi-VN') + "đ";
-    if (document.getElementById("dashCost")) document.getElementById("dashCost").innerText = Math.round(totalCost).toLocaleString('vi-VN') + "đ";
-    if (document.getElementById("dashProfit")) document.getElementById("dashProfit").innerText = Math.round(profit).toLocaleString('vi-VN') + "đ";
-    if (document.getElementById("adminOrderCount")) document.getElementById("adminOrderCount").innerText = dbOrders.length;
-  }
-
-  function switchAdminTab(tab) {
-    const sections = {
-      orders: document.getElementById("adminOrdersSection"),
-      menu: document.getElementById("adminMenuSection"),
-      inventory: document.getElementById("adminInventorySection")
-    };
-    const buttons = {
-      orders: document.getElementById("tabBtnOrders"),
-      menu: document.getElementById("tabBtnMenu"),
-      inventory: document.getElementById("tabBtnInv")
-    };
-
-    for (let key in sections) {
-      if (sections[key]) {
-        if (key === tab) {
-          sections[key].classList.remove("hidden");
-        } else {
-          sections[key].classList.add("hidden");
+    function calculateTotal() {
+      let total = 0, count = 0;
+      for (let id in cart) {
+        const item = dbMenu.find(m => m.id == id);
+        if (item) {
+          total += item.price * cart[id];
+          count += cart[id];
         }
       }
-      if (buttons[key]) {
-        if (key === tab) {
-          buttons[key].className = "py-2 rounded-lg bg-white shadow text-amber-950 font-bold";
-        } else {
-          buttons[key].className = "py-2 rounded-lg text-stone-600 font-bold";
+      document.getElementById("totalCartCount").innerText = count;
+      document.getElementById("totalCartPrice").innerText = total.toLocaleString('vi-VN') + "đ";
+    }
+
+    function checkFormValid() {
+      const room = document.getElementById("roomInput").value.trim();
+      const name = document.getElementById("nameInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+      const hasItems = Object.keys(cart).length > 0;
+      document.getElementById("btnCheckout").disabled = !(room && name && phone && hasItems);
+    }
+
+    function openQrModal() {
+      const room = document.getElementById("roomInput").value.trim();
+      const timeSlot = document.getElementById("timeSlotInput").value;
+      let total = 0;
+      for (let id in cart) {
+        const item = dbMenu.find(m => m.id == id);
+        if (item) total += item.price * cart[id];
+      }
+      const memo = `CF ${room.replace(/\s+/g, '')}`;
+      document.getElementById("vietQrImg").src = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.no}-compact.png?amount=${total}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
+      document.getElementById("qrTotalText").innerText = total.toLocaleString('vi-VN') + "đ";
+      document.getElementById("qrRoomText").innerText = `${room} (${timeSlot})`;
+      document.getElementById("qrModal").classList.remove("hidden");
+    }
+
+    function closePaymentModal() {
+      document.getElementById("qrModal").classList.add("hidden");
+    }
+
+    async function confirmOrderSuccess() {
+      const btn = document.getElementById("btnConfirmPaid");
+      btn.innerText = "Đang ghi nhận đơn...";
+      btn.disabled = true;
+
+      const room = document.getElementById("roomInput").value.trim();
+      const name = document.getElementById("nameInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+      const deliveryTime = document.getElementById("timeSlotInput").value;
+      const note = document.getElementById("noteInput").value.trim();
+
+      let total = 0, orderItems = [];
+      for (let id in cart) {
+        const item = dbMenu.find(m => m.id == id);
+        if (item) {
+          total += item.price * cart[id];
+          orderItems.push({ id: item.id, name: item.name, qty: cart[id] });
         }
       }
-    }
-  }
 
-  function loadAdminOrders() {
-    const listEl = document.getElementById("adminOrdersList");
-    if (!listEl) return;
-    if (dbOrders.length === 0) {
-      listEl.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Chưa có đơn hàng nào.</p>`;
-      return;
-    }
-    listEl.innerHTML = dbOrders.map(o => `
-      <div class="p-3 rounded-xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1 text-xs">
-        <div class="flex justify-between items-center">
-          <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-md">${o.room}</span>
-          <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">⏰ ${o.delivery_time || '06:45 - 07:05'}</span>
-          <button type="button" onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
-            ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
-          </button>
-        </div>
-        <div class="text-stone-700"><b>Khách:</b> ${o.name} - ${o.phone}</div>
-        <p class="text-stone-800"><b>Món:</b> ${formatOrderItems(o.items)}</p>
-        ${o.note ? `<p class="text-amber-900 bg-amber-50 p-1.5 rounded text-[11px]"><b>Ghi chú:</b> ${o.note}</p>` : ''}
-      </div>
-    `).join('');
-  }
-
-  function formatOrderItems(items) {
-    if (!items || !Array.isArray(items)) return 'Không có món';
-    return items.map(it => {
-      const m = dbMenu.find(menuItem => menuItem.id == it.id);
-      return `${m ? m.name : 'Món #' + it.id} x ${it.qty}`;
-    }).join(', ');
-  }
-
-  async function toggleOrderStatus(id, currentStatus) {
-    const newStatus = currentStatus === 'ĐÃ TREO CỬA' ? 'CHƯA GIAO' : 'ĐÃ TREO CỬA';
-    await supabaseClient.from('orders').update({ status: newStatus }).eq('id', id);
-    loadAdminData();
-  }
-
-  function renderAdminMenu() {
-    const listEl = document.getElementById("adminMenuList");
-    if (!listEl) return;
-    listEl.innerHTML = dbMenu.map(m => `
-      <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
-        <div>
-          <p class="font-bold text-stone-800">${m.name}</p>
-          <p class="text-stone-500">Giá: <b>${Number(m.price).toLocaleString('vi-VN')}đ</b></p>
-        </div>
-        <button type="button" onclick="toggleMenuItem(${m.id}, '${m.status}')" class="px-3 py-1 rounded-xl font-bold ${m.status === 'BẬT' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-          ${m.status}
-        </button>
-      </div>
-    `).join('');
-  }
-
-  async function toggleMenuItem(id, currentStatus) {
-    const newStatus = currentStatus === 'BẬT' ? 'HẾT MÓN' : 'BẬT';
-    await supabaseClient.from('menu').update({ status: newStatus }).eq('id', id);
-    loadAdminData();
-  }
-
-  function renderAdminInventory() {
-    const listEl = document.getElementById("adminInvList");
-    if (!listEl) return;
-    listEl.innerHTML = dbInventory.map(i => `
-      <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
-        <div>
-          <p class="font-bold text-stone-800">${i.display_name || i.name} <span class="text-[10px] text-stone-400 font-normal">(${i.name})</span></p>
-          <p class="text-stone-400 text-[11px]">Giá vốn: <b>${i.cost_per_unit}đ/${i.unit}</b></p>
-        </div>
-        <p class="font-black text-sm text-stone-800">${i.stock} ${i.unit}</p>
-      </div>
-    `).join('');
-  }
-
-  async function promptNewStock() {
-    const name = prompt("Nhập mã nguyên liệu (robusta_g, sua_dac_g, duong_g, sua_tuoi_ml, kem_beo_ml, chai_nhua):");
-    if (!name) return;
-    const qty = prompt(`Số lượng ${name} nhập thêm:`);
-    if (!qty || isNaN(qty)) return;
-    const cost = prompt("Tổng tiền hóa đơn lô này (đ):");
-    if (!cost || isNaN(cost)) return;
-
-    try {
-      const { error } = await supabaseClient.from('import_logs').insert([{
-        ingredient_name: name.trim().toLowerCase(),
-        added_qty: Number(qty),
-        total_price: Number(cost)
-      }]);
-      if (error) throw error;
-      alert(`✅ Đã nhập thành công ${qty} vào kho!`);
-      loadAdminData();
-    } catch (err) {
-      alert("Lỗi nhập kho: " + err.message);
-    }
-  }
-
-  // ==========================================
-  // 4. TRỢ LÝ AI (GROQ - TỰ SỬA DỮ LIỆU)
-  // ==========================================
-  function openAiChatModal() {
-    document.getElementById("aiChatModal")?.classList.remove("hidden");
-  }
-
-  function closeAiChatModal() {
-    document.getElementById("aiChatModal")?.classList.add("hidden");
-  }
-
-  async function sendAiMessage() {
-    const inputEl = document.getElementById("aiUserInput");
-    const msgContainer = document.getElementById("aiChatMessages");
-    const btnSend = document.getElementById("btnSendAi");
-    const question = inputEl.value.trim();
-    if (!question) return;
-
-    msgContainer.innerHTML += `<div class="flex justify-end"><div class="bg-[#2B170E] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${question}</div></div>`;
-    inputEl.value = "";
-    msgContainer.scrollTop = msgContainer.scrollHeight;
-
-    const loadingId = "load_" + Date.now();
-    msgContainer.innerHTML += `<div id="${loadingId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang xử lý dữ liệu...</div>`;
-    btnSend.disabled = true;
-
-    try {
-      const currentPin = document.getElementById("pinInput")?.value.trim() || "536125";
-      
-      // ĐIỂM KHÁC BIỆT: Gọi về backend /api/ai thay vì gọi thẳng ra ngoài Groq
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: question,
-          menu: dbMenu,
-          inventory: dbInventory,
-          orders: dbOrders,
-          pin: currentPin // Gửi PIN lên cho Serverless kiểm tra
-        })
-      });
-
-      const resJson = await response.json();
-      if (resJson.error) throw new Error(resJson.error.message || resJson.error);
-
-      const fullResponse = resJson.choices?.[0]?.message?.content || "";
-      document.getElementById(loadingId).remove();
-
-      let displayText = fullResponse;
-      let actionData = null;
-
-      if (fullResponse.includes(":::ACTION")) {
-        const parts = fullResponse.split(":::ACTION");
-        displayText = parts[0].trim();
-        const actionRaw = parts[1].replace(/:::/g, "").trim();
-        try { actionData = JSON.parse(actionRaw); } catch (e) {}
-      }
-
-      msgContainer.innerHTML += `<div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 leading-relaxed whitespace-pre-wrap">${displayText}</div>`;
-
-      if (actionData) {
-        await executeAiAction(actionData, msgContainer);
-      }
-    } catch (err) {
-      document.getElementById(loadingId).remove();
-      msgContainer.innerHTML += `<div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">⚠️ Lỗi: ${err.message}</div>`;
-    }
-
-    btnSend.disabled = false;
-    msgContainer.scrollTop = msgContainer.scrollHeight;
-  }
-
-  async function executeAiAction(action, msgContainer) {
-    try {
-      if (action.type === "UPDATE_PRICE") {
-        await supabaseClient.from('menu').update({ price: Number(action.payload.price) }).eq('id', action.payload.id);
-        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã đổi giá món #${action.payload.id} thành ${Number(action.payload.price).toLocaleString('vi-VN')}đ</div>`;
-      } else if (action.type === "TOGGLE_MENU") {
-        await supabaseClient.from('menu').update({ status: action.payload.status }).eq('id', action.payload.id);
-        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã đổi trạng thái món #${action.payload.id} sang [${action.payload.status}]</div>`;
-      } else if (action.type === "IMPORT_STOCK") {
-        await supabaseClient.from('import_logs').insert([{
-          ingredient_name: action.payload.ingredient_name,
-          added_qty: Number(action.payload.added_qty),
-          total_price: Number(action.payload.total_price)
+      try {
+        const { error } = await supabaseClient.from('orders').insert([{
+          room, name, phone, delivery_time: deliveryTime,
+          note, items: orderItems, total_price: total, status: 'CHƯA GIAO'
         }]);
-        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã nhập thêm ${action.payload.added_qty} vào kho ${action.payload.ingredient_name}</div>`;
-      } else if (action.type === "UPDATE_ORDER") {
-        await supabaseClient.from('orders').update({ status: action.payload.status }).eq('id', action.payload.id);
-        msgContainer.innerHTML += `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 p-2 rounded-xl text-[11px]">⚡ <b>Database:</b> Đã cập nhật đơn #${action.payload.id} sang [${action.payload.status}]</div>`;
+        if (error) throw error;
+        alert(`🎉 Đặt đơn thành công! Quán sẽ treo trước cửa phòng ${room} lúc [${deliveryTime}].`);
+        location.reload();
+      } catch (err) {
+        alert("Lỗi: " + err.message);
+        btn.innerText = "Tôi đã chuyển khoản xong ✅";
+        btn.disabled = false;
       }
-      await loadAdminData();
-    } catch (err) {
-      msgContainer.innerHTML += `<div class="bg-red-50 border border-red-300 text-red-700 p-2 rounded-xl text-[11px]">❌ Lỗi Action: ${err.message}</div>`;
     }
-  }
 
-  // Khởi chạy nạp thực đơn
-  loadMenu();
-</script>
+    loadMenu();
+  </script>
 </body>
 </html>
