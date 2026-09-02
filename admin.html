@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Cà Phê Treo Cửa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8F6F0; } </style>
+</head>
+<body class="text-stone-800 antialiased p-4">
+
+  <!-- CHỐT BẢO MẬT MÃ PIN -->
+  <div id="pinGate" class="fixed inset-0 bg-[#2B170E] z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-2xl">
+      <div class="w-12 h-12 bg-amber-100 text-amber-950 text-2xl rounded-2xl flex items-center justify-center mx-auto">🔒</div>
+      <div>
+        <h2 class="font-black text-stone-900 text-base">Cổng Quản Trị</h2>
+        <p class="text-xs text-stone-400 mt-0.5">Vui lòng nhập PIN để vào hệ thống</p>
+      </div>
+      <input type="password" id="adminPinInput" placeholder="Nhập PIN..." 
+             class="w-full text-center text-xl font-bold tracking-widest border border-stone-300 py-2.5 rounded-xl outline-none focus:border-amber-950"
+             onkeypress="if(event.key==='Enter') verifyAdminPin()">
+      <button onclick="verifyAdminPin()" class="w-full py-3 bg-amber-950 text-white font-bold text-xs rounded-xl shadow">Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- NỘI DUNG QUẢN TRỊ ADMIN -->
+  <div id="adminMain" class="max-w-md mx-auto space-y-4 hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-[#2B170E] text-white p-4 rounded-3xl shadow">
+      <div>
+        <p class="font-black text-sm">QUẢN TRỊ QUÁN ☕</p>
+        <p class="text-[10px] text-amber-300">Đồng bộ hai chiều với Supabase</p>
+      </div>
+      <button onclick="logoutAdmin()" class="text-xs bg-amber-900 hover:bg-amber-800 px-3 py-1.5 rounded-xl font-bold border border-amber-700">Đăng xuất</button>
+    </div>
+
+    <!-- Khối Trợ lý AI -->
+    <div class="bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-4 rounded-3xl shadow flex items-center justify-between">
+      <div>
+        <h3 class="font-black text-xs flex items-center gap-1.5">✨ Trợ Lý Kinh Doanh AI</h3>
+        <p class="text-[10px] text-purple-200">Phân tích đơn & lộ trình pha chế</p>
+      </div>
+      <button onclick="openAiChat()" class="px-3.5 py-2 bg-white text-purple-950 font-black rounded-xl text-xs shadow hover:bg-purple-50">Hỏi Trợ Lý</button>
+    </div>
+
+    <!-- P&L Dashboard -->
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
+        <p class="text-[10px] text-stone-400 font-bold uppercase">Doanh Thu</p>
+        <p class="text-sm font-black text-amber-950 mt-1" id="dashRevenue">0đ</p>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
+        <p class="text-[10px] text-stone-400 font-bold uppercase">Giá Vốn</p>
+        <p class="text-sm font-black text-red-600 mt-1" id="dashCost">0đ</p>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
+        <p class="text-[10px] text-stone-400 font-bold uppercase">Lãi Gộp</p>
+        <p class="text-sm font-black text-emerald-600 mt-1" id="dashProfit">0đ</p>
+      </div>
+    </div>
+
+    <!-- Chuyển Tabs -->
+    <div class="grid grid-cols-3 gap-1 bg-stone-200 p-1 rounded-2xl text-xs font-bold">
+      <button onclick="switchTab('orders')" id="btnTabOrders" class="py-2 rounded-xl bg-white shadow text-amber-950">📦 Đơn (<span id="adminOrderCount">0</span>)</button>
+      <button onclick="switchTab('menu')" id="btnTabMenu" class="py-2 rounded-xl text-stone-600">☕ Món & Giá</button>
+      <button onclick="switchTab('inv')" id="btnTabInv" class="py-2 rounded-xl text-stone-600">📊 Kho & Nhập</button>
+    </div>
+
+    <!-- Tab 1: Đơn Hàng -->
+    <div id="secOrders" class="space-y-3">
+      <div class="flex justify-between items-center text-xs text-stone-500">
+        <span>Lộ trình: Theo cụm tầng cao xuống thấp</span>
+        <button onclick="loadAdminData()" class="text-amber-900 font-bold underline">Làm mới ↻</button>
+      </div>
+      <div id="ordersList" class="space-y-2"></div>
+    </div>
+
+    <!-- Tab 2: Menu -->
+    <div id="secMenu" class="space-y-2 hidden">
+      <div id="adminMenuList" class="space-y-2"></div>
+    </div>
+
+    <!-- Tab 3: Kho -->
+    <div id="secInv" class="space-y-3 hidden">
+      <div class="flex justify-between items-center">
+        <p class="text-xs text-stone-500">Tồn kho nguyên liệu thực tế:</p>
+        <button onclick="promptImportStock()" class="text-xs bg-amber-950 text-white font-bold px-3 py-1.5 rounded-xl shadow">+ Nhập kho</button>
+      </div>
+      <div id="adminInvList" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- POPUP TRỢ LÝ AI -->
+  <div id="aiModal" class="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="bg-[#2B170E] text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm">🤖</div>
+          <div>
+            <h4 class="font-bold text-xs">Trợ Lý Vận Hành Quán</h4>
+            <p class="text-[10px] text-emerald-400 font-semibold">● Đã kết nối Supabase</p>
+          </div>
+        </div>
+        <button onclick="closeAiChat()" class="text-stone-400 hover:text-white text-lg">✕</button>
+      </div>
+      <div id="aiChatBox" class="flex-1 p-4 overflow-y-auto space-y-3 bg-stone-50 text-xs">
+        <div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200">
+          Chào bạn! Tôi đã đồng bộ đơn, kho và thực đơn. Bạn muốn phân tích lộ trình giao hay tính toán nguyên liệu pha chế cho sáng mai?
+        </div>
+      </div>
+      <div class="p-3 bg-white border-t flex gap-2">
+        <input type="text" id="aiInput" placeholder="Nhập câu hỏi cho AI..." 
+               class="flex-1 border border-stone-300 rounded-xl px-3 py-2 text-xs outline-none focus:border-purple-600"
+               onkeypress="if(event.key==='Enter') sendAiQuery()">
+        <button onclick="sendAiQuery()" id="btnSend" class="bg-purple-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow">Gửi</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let dbOrders = [], dbMenu = [], dbInventory = [];
+
+    function verifyAdminPin() {
+      const pin = document.getElementById("adminPinInput").value.trim();
+      if (pin === "536125") {
+        sessionStorage.setItem("isAdmin", "true");
+        document.getElementById("pinGate").classList.add("hidden");
+        document.getElementById("adminMain").classList.remove("hidden");
+        loadAdminData();
+      } else {
+        alert("❌ Mã PIN không chính xác!");
+        document.getElementById("adminPinInput").value = "";
+      }
+    }
+
+    function logoutAdmin() {
+      sessionStorage.removeItem("isAdmin");
+      location.reload();
+    }
+
+    if (sessionStorage.getItem("isAdmin") === "true") {
+      document.getElementById("pinGate").classList.add("hidden");
+      document.getElementById("adminMain").classList.remove("hidden");
+      loadAdminData();
+    }
+
+    async function loadAdminData() {
+      try {
+        const [oRes, mRes, iRes] = await Promise.all([
+          supabaseClient.from('orders').select('*').order('id', { ascending: false }),
+          supabaseClient.from('menu').select('*').order('id', { ascending: true }),
+          supabaseClient.from('inventory').select('*').order('id', { ascending: true })
+        ]);
+        dbOrders = oRes.data || [];
+        dbMenu = mRes.data || [];
+        dbInventory = iRes.data || [];
+
+        renderFinancials();
+        renderOrders();
+        renderMenu();
+        renderInventory();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderFinancials() {
+      const valid = dbOrders.filter(o => o.status !== 'ĐÃ HỦY');
+      const revenue = valid.reduce((s, o) => s + Number(o.total_price), 0);
+      let cost = 0;
+      valid.forEach(o => {
+        if (Array.isArray(o.items)) {
+          o.items.forEach(it => {
+            const m = dbMenu.find(item => item.id == it.id);
+            if (m && m.bom) {
+              for (let ing in m.bom) {
+                const inv = dbInventory.find(i => i.name === ing);
+                if (inv) cost += (Number(m.bom[ing]) * Number(inv.cost_per_unit || 0)) * it.qty;
+              }
+            }
+          });
+        }
+      });
+      document.getElementById("dashRevenue").innerText = revenue.toLocaleString('vi-VN') + "đ";
+      document.getElementById("dashCost").innerText = Math.round(cost).toLocaleString('vi-VN') + "đ";
+      document.getElementById("dashProfit").innerText = Math.round(revenue - cost).toLocaleString('vi-VN') + "đ";
+      document.getElementById("adminOrderCount").innerText = dbOrders.length;
+    }
+
+    function switchTab(t) {
+      ['orders', 'menu', 'inv'].forEach(tab => {
+        const sec = document.getElementById(`sec${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        const btn = document.getElementById(`btnTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        if (tab === t) {
+          sec.classList.remove("hidden");
+          btn.className = "py-2 rounded-xl bg-white shadow text-amber-950 font-bold";
+        } else {
+          sec.classList.add("hidden");
+          btn.className = "py-2 rounded-xl text-stone-600 font-bold";
+        }
+      });
+    }
+
+    function renderOrders() {
+      const list = document.getElementById("ordersList");
+      if (dbOrders.length === 0) {
+        list.innerHTML = `<p class="text-xs text-stone-400 text-center py-6">Chưa có đơn hàng nào.</p>`;
+        return;
+      }
+      list.innerHTML = dbOrders.map(o => `
+        <div class="p-3.5 rounded-2xl border ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-200 opacity-60' : 'bg-white shadow-sm'} space-y-1.5 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="font-black text-sm text-amber-950 bg-amber-100 px-2 py-0.5 rounded-lg">${o.room}</span>
+            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">⏰ ${o.delivery_time}</span>
+            <button onclick="toggleOrderStatus(${o.id}, '${o.status}')" class="px-2.5 py-1 rounded-xl font-bold text-[11px] ${o.status === 'ĐÃ TREO CỬA' ? 'bg-stone-400 text-white' : 'bg-emerald-600 text-white'}">
+              ${o.status === 'ĐÃ TREO CỬA' ? '✓ Đã treo' : 'Chưa giao'}
+            </button>
+          </div>
+          <p class="text-stone-700"><b>Khách:</b> ${o.name} - ${o.phone}</p>
+          <p class="text-stone-800"><b>Món:</b> ${Array.isArray(o.items) ? o.items.map(i => `${i.name || 'Món'} x ${i.qty}`).join(', ') : ''}</p>
+          ${o.note ? `<p class="text-amber-900 bg-amber-50 p-1.5 rounded-lg text-[11px]"><b>Ghi chú:</b> ${o.note}</p>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function toggleOrderStatus(id, cur) {
+      const next = cur === 'ĐÃ TREO CỬA' ? 'CHƯA GIAO' : 'ĐÃ TREO CỬA';
+      await supabaseClient.from('orders').update({ status: next }).eq('id', id);
+      loadAdminData();
+    }
+
+    function renderMenu() {
+      document.getElementById("adminMenuList").innerHTML = dbMenu.map(m => `
+        <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
+          <div>
+            <p class="font-bold text-stone-800">${m.name}</p>
+            <p class="text-stone-400">Giá: <b>${m.price.toLocaleString('vi-VN')}đ</b></p>
+          </div>
+          <button onclick="toggleMenuStatus(${m.id}, '${m.status}')" class="px-3 py-1 rounded-xl font-bold ${m.status === 'BẬT' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+            ${m.status}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function toggleMenuStatus(id, cur) {
+      const next = cur === 'BẬT' ? 'HẾT MÓN' : 'BẬT';
+      await supabaseClient.from('menu').update({ status: next }).eq('id', id);
+      loadAdminData();
+    }
+
+    function renderInventory() {
+      document.getElementById("adminInvList").innerHTML = dbInventory.map(i => `
+        <div class="bg-white p-3 rounded-2xl border flex items-center justify-between text-xs shadow-sm">
+          <div>
+            <p class="font-bold text-stone-800">${i.display_name || i.name}</p>
+            <p class="text-stone-400 text-[11px]">Giá vốn: <b>${i.cost_per_unit}đ/${i.unit}</b></p>
+          </div>
+          <p class="font-black text-sm text-stone-800">${i.stock} ${i.unit}</p>
+        </div>
+      `).join('');
+    }
+
+    async function promptImportStock() {
+      const name = prompt("Nhập mã nguyên liệu (robusta_g, sua_dac_g, duong_g, sua_tuoi_ml, kem_beo_ml, chai_nhua):");
+      if (!name) return;
+      const qty = prompt(`Số lượng ${name} nhập thêm:`);
+      if (!qty || isNaN(qty)) return;
+      const cost = prompt("Tổng tiền lô hàng (đ):");
+      if (!cost || isNaN(cost)) return;
+
+      await supabaseClient.from('import_logs').insert([{
+        ingredient_name: name.trim().toLowerCase(),
+        added_qty: Number(qty),
+        total_price: Number(cost)
+      }]);
+      alert("✅ Nhập kho thành công!");
+      loadAdminData();
+    }
+
+    function openAiChat() { document.getElementById("aiModal").classList.remove("hidden"); }
+    function closeAiChat() { document.getElementById("aiModal").classList.add("hidden"); }
+
+    async function sendAiQuery() {
+      const input = document.getElementById("aiInput");
+      const box = document.getElementById("aiChatBox");
+      const btn = document.getElementById("btnSend");
+      const query = input.value.trim();
+      if (!query) return;
+
+      box.innerHTML += `<div class="flex justify-end"><div class="bg-[#2B170E] text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${query}</div></div>`;
+      input.value = "";
+      box.scrollTop = box.scrollHeight;
+
+      const loadId = "load_" + Date.now();
+      box.innerHTML += `<div id="${loadId}" class="bg-stone-200 text-stone-600 p-2.5 rounded-2xl rounded-tl-none max-w-[60%] text-[11px] animate-pulse">Đang phân tích dữ liệu...</div>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: query, menu: dbMenu, inventory: dbInventory, orders: dbOrders, pin: "536125" })
+        });
+        const data = await res.json();
+        document.getElementById(loadId).remove();
+        box.innerHTML += `<div class="bg-purple-100 text-purple-950 p-3 rounded-2xl rounded-tl-none max-w-[85%] border border-purple-200 whitespace-pre-wrap">${data.choices?.[0]?.message?.content || "Không có phản hồi."}</div>`;
+      } catch (err) {
+        document.getElementById(loadId).remove();
+        box.innerHTML += `<div class="bg-red-100 text-red-700 p-2.5 rounded-2xl text-[11px]">Lỗi: ${err.message}</div>`;
+      }
+      btn.disabled = false;
+      box.scrollTop = box.scrollHeight;
+    }
+  </script>
+</body>
+</html>
