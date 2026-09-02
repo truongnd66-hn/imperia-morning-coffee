@@ -48,7 +48,7 @@ Quy tắc:
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: modelName,
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question }
