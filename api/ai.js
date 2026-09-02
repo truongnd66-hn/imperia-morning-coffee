@@ -12,17 +12,49 @@ export default async function handler(req, res) {
     }
     const { question, menu, inventory, orders, pin } = body || {};
 
-    // 1. Xác thực PIN Admin
+    // 1. Kiểm tra PIN Quản trị
     const validPin = process.env.ADMIN_PIN || "536125";
     if (String(pin).trim() !== String(validPin).trim()) {
       return res.status(401).json({ error: 'Mã PIN quản trị không hợp lệ' });
     }
 
-    // 2. Lấy API Key từ Vercel
-    const targetModel = (process.env.GROQ_MODEL || "llama3-8b-8192").trim();
+    // 2. Kiểm tra GROQ_API_KEY
     const apiKey = (process.env.GROQ_API_KEY || "").trim();
     if (!apiKey) {
       return res.status(500).json({ error: 'Chưa cấu hình GROQ_API_KEY trên Vercel!' });
+    }
+
+    // 3. TỰ ĐỘNG LẤY DANH SÁCH MODEL MÀ TÀI KHOẢN ĐƯỢC PHÉP DÙNG TỪ GROQ
+    const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { "Authorization": `Bearer ${apiKey}` }
+    });
+    const modelsData = await modelsRes.json();
+
+    if (modelsData.error) {
+      return res.status(400).json({ error: `Lỗi xác thực Groq: ${modelsData.error.message}` });
+    }
+
+    const availableModels = (modelsData.data || []).map(m => m.id);
+
+    // Danh sách ưu tiên các model text ổn định nhất của Groq
+    const priorityList = [
+      "llama-3.1-8b-instant",
+      "llama-3.3-70b-versatile",
+      "llama3-8b-8192",
+      "llama3-70b-8192",
+      "gemma2-9b-it",
+      "mixtral-8x7b-32768"
+    ];
+
+    // Tự động nhặt model tốt nhất có sẵn trong tài khoản của bạn
+    let selectedModel = priorityList.find(p => availableModels.includes(p)) 
+                     || availableModels.find(id => id.includes("llama") || id.includes("8b"))
+                     || availableModels[0];
+
+    if (!selectedModel) {
+      return res.status(400).json({ 
+        error: `Tài khoản Groq của bạn không có model text nào khả dụng. Danh sách hiện có: ${availableModels.join(', ')}` 
+      });
     }
 
     const systemPrompt = `Bạn là Trợ lý Vận hành quán Cà Phê Treo Cửa (Imperia Sky Garden).
@@ -47,9 +79,6 @@ Quy tắc:
 {"type": "UPDATE_ORDER", "payload": {"id": 1, "status": "ĐÃ TREO CỬA"}}
 :::`;
 
-    // Giải mã Base64: Đảm bảo 100% chuỗi là "llama-3.3-70b-versatile" chuẩn mã ASCII 45
-    const cleanModelName = Buffer.from("bGxhbWEtMy4zLTcwYi12ZXJzYXRpbGU=", "base64").toString("ascii");
-
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -57,7 +86,7 @@ Quy tắc:
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: cleanModelName,
+        model: selectedModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question }
@@ -69,7 +98,9 @@ Quy tắc:
     const result = await response.json();
 
     if (result.error) {
-      return res.status(400).json({ error: `Lỗi từ Groq: ${result.error.message}` });
+      return res.status(400).json({ 
+        error: `Groq từ chối model [${selectedModel}]: ${result.error.message} | Các model tài khoản có: ${availableModels.slice(0, 5).join(', ')}` 
+      });
     }
 
     return res.status(200).json(result);
