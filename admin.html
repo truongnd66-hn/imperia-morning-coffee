@@ -353,17 +353,19 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    async function executeAiAction(action, box) {
+async function executeAiAction(action, box) {
       try {
         if (action.type === "ADD_MENU_ITEM") {
-          const { error } = await supabaseClient.from('menu').insert([{
+          // Chỉ gửi các cột thực sự tồn tại trong bảng menu
+          const newRow = {
             name: action.payload.name,
-            price: Number(action.payload.price) || 25000,
-            desc: action.payload.desc || "Món mới cập nhật",
-            status: "BẬT",
-            img: action.payload.img || "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=200"
-          }]);
+            price: Number(action.payload.price) || 20000,
+            status: "BẬT"
+          };
+
+          const { error } = await supabaseClient.from('menu').insert([newRow]);
           if (error) throw error;
+
           box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã thêm thành công món [${action.payload.name}] vào thực đơn!</div>`;
         } 
         else if (action.type === "UPDATE_PRICE") {
@@ -382,8 +384,10 @@
           box.innerHTML += `<div class="bg-emerald-100 text-emerald-900 p-2 rounded-xl text-[11px] font-bold">⚡ Supabase: Đã duyệt đơn #${action.payload.id} sang [${action.payload.status}]!</div>`;
         }
 
-        // Tự động load lại bảng điều khiển để số liệu cập nhật tức thì
-        await loadAdminData();
+        // Tự động tải lại bảng quản trị để cập nhật danh sách tức thì
+        if (typeof loadAdminData === "function") {
+          await loadAdminData();
+        }
 
       } catch (e) {
         box.innerHTML += `<div class="bg-red-50 text-red-600 p-2 rounded-xl text-[11px]">❌ Lỗi thực thi Database: ${e.message}</div>`;
