@@ -213,7 +213,6 @@
   // ==========================================
   const SUPABASE_URL = "https://bbageeodpofcdvszyejb.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWdlZW9kcG9mY2R2c3p5ZWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODY2OTEsImV4cCI6MjEwMjk2MjY5MX0.p4vLhapqBH1-BxEK_vH7-KFWCJPH666ftZz4seT2QSs";
-  const GROQ_API_KEY = "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";
   const VALID_PINS = ["536125"]; // Duy nhất mã PIN 536125
 
   const BANK_CONFIG = {
@@ -625,22 +624,21 @@ Dữ liệu Supabase hiện tại:
 }
 :::`;
 
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+// Gọi qua backend nội bộ trên Vercel - Khóa API được bảo mật 100%
+      const response = await fetch("/api/ai", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: question }
-          ],
-          temperature: 0.1
+          question: question,
+          menu: dbMenu,
+          inventory: dbInventory,
+          orders: dbOrders,
+          pin: "536125"
         })
       });
 
+      const resJson = await response.json();
+      if (resJson.error) throw new Error(resJson.error.message || resJson.error);
       const resJson = await response.json();
       if (resJson.error) throw new Error(resJson.error.message || "Lỗi máy chủ AI");
 
